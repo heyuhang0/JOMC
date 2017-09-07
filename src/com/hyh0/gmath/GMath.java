@@ -1,6 +1,7 @@
 package com.hyh0.gmath;
 
 import java.io.IOException;
+import java.nio.channels.ShutdownChannelGroupException;
 
 import com.hyh0.gmath.debug.Tools;
 import com.jogamp.opencl.CLCommandQueue;
@@ -19,7 +20,8 @@ public class GMath {
     private CLKernel kMatrixAdd;
     private CLKernel kRand;
     private CLKernel kMatrixMultiply;
-
+    private CLKernel kSigmoid;
+    
     public GMath() {
         context = CLContext.create();
         Tools.println(context);
@@ -31,6 +33,7 @@ public class GMath {
             kMatrixAdd = program.createCLKernel("matrixAdd");
             kRand = program.createCLKernel("rand");
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
+            kSigmoid = program.createCLKernel("sigmoid");
         } catch (IOException e) {
             this.release();
             e.printStackTrace();
@@ -74,7 +77,7 @@ public class GMath {
      * @param mr
      *            保存结果的矩阵
      */
-    public void matrixAdd(GMatrix m1, GMatrix m2, GMatrix mr) {
+    public void add(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == m2.M && m1.M == mr.M && m1.N == m2.N && m1.N == mr.N) {
             kMatrixAdd.setArg(0, m1.getArg());
             kMatrixAdd.setArg(1, m2.getArg());
@@ -93,7 +96,7 @@ public class GMath {
         queue.put1DRangeKernel(kRand, 0, matrix.M * matrix.N, 0);
     }
 
-    public void matrixMultiply(GMatrix m1, GMatrix m2, GMatrix mr) {
+    public void multiply(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == mr.M
             && m1.N == m2.M
             && m2.N == mr.N) {
@@ -104,10 +107,21 @@ public class GMath {
             kMatrixMultiply.setArg(3, m1.M);
             kMatrixMultiply.setArg(4, m1.N);
             kMatrixMultiply.setArg(5, m2.N);
-            
             queue.put2DRangeKernel(kMatrixMultiply, 0, 0, m1.M, m2.N, 0, 0);
         } else {
             throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
+        }
+    }
+    
+    public void sigmoid(GMatrix inputMatrix, GMatrix resultMatrix) {
+        if (inputMatrix.M == resultMatrix.M
+                && inputMatrix.M == resultMatrix.M) {
+            kSigmoid.setArg(0, inputMatrix.getArg());
+            kSigmoid.setArg(1, resultMatrix.getArg());
+            
+            queue.put1DRangeKernel(kSigmoid, 0, inputMatrix.M * inputMatrix.N, 0);
+        } else {
+            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
         }
     }
 

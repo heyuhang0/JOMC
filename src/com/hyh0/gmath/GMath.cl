@@ -36,3 +36,12 @@ kernel void matrixMultiply(
     }
     mr[mID * P + nID] = sum;
 }
+
+// use sigmoid function to compute every element in inputMatrix
+// and save the result in result matrix
+kernel void sigmoid(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = 1.0 / (1.0 + exp(-inputMatrix[id]));
+}
