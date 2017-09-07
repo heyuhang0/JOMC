@@ -1,7 +1,6 @@
 package com.hyh0.gmath;
 
 import java.io.IOException;
-import java.nio.channels.ShutdownChannelGroupException;
 
 import com.hyh0.gmath.debug.Tools;
 import com.jogamp.opencl.CLCommandQueue;
