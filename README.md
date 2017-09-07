@@ -1,0 +1,2 @@
+# OpenCL_Matrix_Computing
+用Java实现的基于OpenCl的矩阵运算库
