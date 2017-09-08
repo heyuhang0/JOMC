@@ -45,3 +45,9 @@ kernel void sigmoid(
     int id = get_global_id(0);
     resultMatrix[id] = 1.0 / (1.0 + exp(-inputMatrix[id]));
 }
+
+kernel void compare(global const float* m1, global const float* m2, global int* result) {
+    int id = get_global_id(0);
+    if(m1[id] != m2[id])
+        atomic_inc(result);
+}
