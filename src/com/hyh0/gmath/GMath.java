@@ -25,6 +25,7 @@ public class GMath {
     private CLKernel kRand;
     private CLKernel kMatrixMultiply;
     private CLKernel kMatrixMultiply2;
+    private CLKernel kMatrixMultiplyN;
     private CLKernel kSigmoid;
     private CLKernel kCompare;
     
@@ -40,6 +41,7 @@ public class GMath {
             kRand = program.createCLKernel("rand");
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
             kMatrixMultiply2 = program.createCLKernel("matrixMultiply2");
+            kMatrixMultiplyN = program.createCLKernel("matrixMultiplyN");
             kSigmoid = program.createCLKernel("sigmoid");
             kCompare = program.createCLKernel("compare");
         } catch (IOException e) {
@@ -135,6 +137,27 @@ public class GMath {
             kMatrixMultiply2.setArg(4, m1.N);
             kMatrixMultiply2.setArg(5, m2.N);
             queue.put2DRangeKernel(kMatrixMultiply2, 0, 0, m1.M/2, m2.N/2 , 0, 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
+        }
+    }
+    
+    final int WORK_ITEM_M = 8;
+    final int WORK_ITEM_N = 8;
+    public void multiplyN(GMatrix m1, GMatrix m2, GMatrix mr) {
+        if (m1.M == mr.M
+            && m1.N == m2.M
+            && m2.N == mr.N
+            && m1.M % WORK_ITEM_M == 0
+            && m2.N % WORK_ITEM_N == 0) {
+            
+            kMatrixMultiplyN.setArg(0, m1.getArg());
+            kMatrixMultiplyN.setArg(1, m2.getArg());
+            kMatrixMultiplyN.setArg(2, mr.getArg());
+            kMatrixMultiplyN.setArg(3, m1.M);
+            kMatrixMultiplyN.setArg(4, m1.N);
+            kMatrixMultiplyN.setArg(5, m2.N);
+            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.M/WORK_ITEM_M, m2.N/WORK_ITEM_N , 0, 0);
         } else {
             throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
         }

@@ -66,6 +66,41 @@ kernel void matrixMultiply2(
     mr[mID * P + nID + 1 + P] = sum[1][1];
 }
 
+#define WORK_ITEM_M 8
+#define WORK_ITEM_N 8
+kernel void matrixMultiplyN(
+        global const float* m1,
+        global const float* m2,
+        global float* mr,
+        int M, int N, int P) {
+    int mID = get_global_id(0) * WORK_ITEM_M;
+    int nID = get_global_id(1) * WORK_ITEM_N;
+    
+    float sum[WORK_ITEM_M][WORK_ITEM_N];
+    float data1[WORK_ITEM_M];
+    float data2[WORK_ITEM_N];
+    
+    for(int n = 0; n < N; n++) {
+        for(int i = 0; i < WORK_ITEM_M; i++) {
+            data1[i] = m1[(mID + i) * N + n];
+        }
+        for(int i = 0; i < WORK_ITEM_N; i++) {
+            data2[i] = m2[nID + n * P + i];
+        }
+        
+        for(int m = 0; m < WORK_ITEM_M; m++) {
+            for(int n = 0; n < WORK_ITEM_N; n++) {
+                sum[m][n] += data1[m] * data2[n];
+            }
+        }
+    }
+    for(int m = 0; m < WORK_ITEM_M; m++) {
+        for(int n = 0; n < WORK_ITEM_N; n++) {
+            mr[(mID + m) * P + nID + n] = sum[m][n];
+        }
+    }
+}
+
 // use sigmoid function to compute every element in inputMatrix
 // and save the result in result matrix
 kernel void sigmoid(
