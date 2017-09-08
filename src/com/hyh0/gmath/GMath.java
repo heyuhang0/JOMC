@@ -2,12 +2,16 @@ package com.hyh0.gmath;
 
 import java.io.IOException;
 
+import java.nio.IntBuffer;
+
 import com.hyh0.gmath.debug.Tools;
+
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLKernel;
+import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLProgram;
 
 public class GMath {
@@ -22,6 +26,7 @@ public class GMath {
     private CLKernel kMatrixMultiply;
     private CLKernel kMatrixMultiply2;
     private CLKernel kSigmoid;
+    private CLKernel kCompare;
     
     public GMath() {
         context = CLContext.create();
@@ -36,6 +41,7 @@ public class GMath {
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
             kMatrixMultiply2 = program.createCLKernel("matrixMultiply2");
             kSigmoid = program.createCLKernel("sigmoid");
+            kCompare = program.createCLKernel("compare");
         } catch (IOException e) {
             this.release();
             e.printStackTrace();
@@ -146,6 +152,32 @@ public class GMath {
         }
     }
 
+    private CLBuffer<IntBuffer>  isEqualResultBuffer;
+    private boolean isEqualResultBufferInited = false;
+    public boolean isEqual(GMatrix m1, GMatrix m2) {
+        if (m1.M == m2.M && m1.N == m2.N) {
+            if(!isEqualResultBufferInited) {
+                isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
+            }
+            isEqualResultBuffer.getBuffer().position(0);
+            isEqualResultBuffer.getBuffer().put(0);
+            isEqualResultBuffer.getBuffer().position(0);
+            queue.putWriteBuffer(isEqualResultBuffer, true);
+            kCompare.setArg(0, m1.getArg());
+            kCompare.setArg(1, m2.getArg());
+            kCompare.setArg(2, isEqualResultBuffer);
+            queue.put1DRangeKernel(kCompare, 0, m1.M * m2.N, 0);
+            queue.putReadBuffer(isEqualResultBuffer, true);
+            
+            if(isEqualResultBuffer.getBuffer().get(0) > 0)
+                return false;
+            else
+                return true;
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不符,无法比较");
+        }
+    }
+    
     public void finish() {
         queue.finish();
     }

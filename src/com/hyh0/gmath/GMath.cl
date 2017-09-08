@@ -74,3 +74,11 @@ kernel void sigmoid(
     int id = get_global_id(0);
     resultMatrix[id] = 1.0 / (1.0 + exp(-inputMatrix[id]));
 }
+
+#define ERROR_ALLOWED 0.0000001
+kernel void compare(global const float* m1, global const float* m2, global int* result) {
+    int id = get_global_id(0);
+    float error = m1[id] - m2[id];
+    if(error > ERROR_ALLOWED || error < -ERROR_ALLOWED)
+        atomic_inc(result);
+}
