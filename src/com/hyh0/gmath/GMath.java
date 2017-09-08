@@ -3,6 +3,7 @@ package com.hyh0.gmath;
 import java.io.IOException;
 
 import com.hyh0.gmath.debug.Tools;
+import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
@@ -19,6 +20,7 @@ public class GMath {
     private CLKernel kMatrixAdd;
     private CLKernel kRand;
     private CLKernel kMatrixMultiply;
+    private CLKernel kMatrixMultiply2;
     private CLKernel kSigmoid;
     
     public GMath() {
@@ -32,6 +34,7 @@ public class GMath {
             kMatrixAdd = program.createCLKernel("matrixAdd");
             kRand = program.createCLKernel("rand");
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
+            kMatrixMultiply2 = program.createCLKernel("matrixMultiply2");
             kSigmoid = program.createCLKernel("sigmoid");
         } catch (IOException e) {
             this.release();
@@ -107,6 +110,25 @@ public class GMath {
             kMatrixMultiply.setArg(4, m1.N);
             kMatrixMultiply.setArg(5, m2.N);
             queue.put2DRangeKernel(kMatrixMultiply, 0, 0, m1.M, m2.N, 0, 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
+        }
+    }
+    
+    public void multiply2(GMatrix m1, GMatrix m2, GMatrix mr) {
+        if (m1.M == mr.M
+            && m1.N == m2.M
+            && m2.N == mr.N
+            && m1.M % 2 == 0
+            && m2.N % 2 == 0) {
+            
+            kMatrixMultiply2.setArg(0, m1.getArg());
+            kMatrixMultiply2.setArg(1, m2.getArg());
+            kMatrixMultiply2.setArg(2, mr.getArg());
+            kMatrixMultiply2.setArg(3, m1.M);
+            kMatrixMultiply2.setArg(4, m1.N);
+            kMatrixMultiply2.setArg(5, m2.N);
+            queue.put2DRangeKernel(kMatrixMultiply2, 0, 0, m1.M/2, m2.N/2 , 0, 0);
         } else {
             throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
         }

@@ -16,6 +16,17 @@ public class GMathTest {
         speedTest(50000, 10, 10, gpu);
         speedTest(10, 50000, 10, gpu);
         
+        GMatrix mA = gpu.newGMatrix(10, 10);
+        GMatrix mB = gpu.newGMatrix(10, 10);
+        GMatrix mC1 = gpu.newGMatrix(10, 10);
+        GMatrix mC2 = gpu.newGMatrix(10, 10);
+        gpu.fillMatrixRandomly(mA, -5, 5);
+        gpu.fillMatrixRandomly(mB, -5, 5);
+        gpu.multiply(mA, mB, mC1);
+        gpu.multiply2(mA, mB, mC2);
+        System.out.println(mC1);
+        System.out.println(mC2);
+        
         gpu.release();
     }
     
@@ -29,6 +40,12 @@ public class GMathTest {
         
         Tools.resetTimer();
         gpu.multiply(mA, mB, mC);
+        gpu.finish();
+        System.out.print("m=" + m + " n=" + n + " p=" + p + " : ");
+        Tools.showTimer();
+        
+        Tools.resetTimer();
+        gpu.multiply2(mA, mB, mC);
         gpu.finish();
         System.out.print("m=" + m + " n=" + n + " p=" + p + " : ");
         Tools.showTimer();

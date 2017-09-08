@@ -37,6 +37,35 @@ kernel void matrixMultiply(
     mr[mID * P + nID] = sum;
 }
 
+kernel void matrixMultiply2(
+        global const float* m1,
+        global const float* m2,
+        global float* mr,
+        int M, int N, int P) {
+    
+    int mID = get_global_id(0) * 2;
+    int nID = get_global_id(1) * 2;
+    
+    float sum[2][2];
+    float data[2][2];
+    
+    for(int i = 0; i < N; i++) {
+        data[0][0] = m1[mID * N + i];
+        data[0][1] = m1[mID * N + i + N];
+        data[1][0] = m2[nID + i * P];
+        data[1][1] = m2[nID + i * P + 1];
+
+        sum[0][0] += data[0][0] * data[1][0];
+        sum[0][1] += data[0][0] * data[1][1];
+        sum[1][0] += data[0][1] * data[1][0];
+        sum[1][1] += data[0][1] * data[1][1];
+    }
+    mr[mID * P + nID] = sum[0][0];
+    mr[mID * P + nID + 1] = sum[0][1];
+    mr[mID * P + nID + P] = sum[1][0];
+    mr[mID * P + nID + 1 + P] = sum[1][1];
+}
+
 // use sigmoid function to compute every element in inputMatrix
 // and save the result in result matrix
 kernel void sigmoid(
