@@ -160,8 +160,8 @@ public class GMath {
     }
     
     
-    final int WORK_ITEM_M = 8;
-    final int WORK_ITEM_N = 8;
+    private final int WORK_ITEM_M = 8;
+    private final int WORK_ITEM_N = 8;
     /**
      * 将两个矩阵相乘并将结果保存在第三个矩阵中
      * 
