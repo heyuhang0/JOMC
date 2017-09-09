@@ -29,6 +29,10 @@ public class GMath {
     private CLKernel kSigmoid;
     private CLKernel kCompare;
     
+    /**
+     * 完成OpenCl的初始化
+     * !!用完后需要调用release方法释放资源
+     */
     public GMath() {
         context = CLContext.create();
         Tools.println(context);
@@ -56,11 +60,8 @@ public class GMath {
 
     /**
      * 创建一个矩阵对象
-     * 
-     * @param m
-     *            矩阵的行数
-     * @param n
-     *            矩阵的列数
+     * @param m 矩阵的行数
+     * @param n 矩阵的列数
      * @return 一个GMatrix的矩阵对象
      */
     public GMatrix newGMatrix(int m, int n) {
@@ -68,8 +69,7 @@ public class GMath {
     }
 
     /**
-     * 通过一个二维数组创建
-     * 
+     * 创建一个与二维数组数据相同的矩阵
      * @param data
      * @return
      */
@@ -79,13 +79,9 @@ public class GMath {
 
     /**
      * 将两个矩阵相加并将结果保存在第三个矩阵中
-     * 
-     * @param m1
-     *            输入矩阵1
-     * @param m2
-     *            输入矩阵2
-     * @param mr
-     *            保存结果的矩阵
+     * @param m1 输入矩阵1
+     * @param m2 输入矩阵2
+     * @param mr 保存结果的矩阵
      */
     public void add(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == m2.M && m1.M == mr.M && m1.N == m2.N && m1.N == mr.N) {
@@ -98,6 +94,13 @@ public class GMath {
         }
     }
 
+    /**
+     * 用均匀随机数初始化矩阵
+     * @param matrix 输出的矩阵
+     * @param lowerLimit 随机数的下限
+     * @param upperLimit 随机数的上限
+     */
+    // TODO 当前只使用了一个粗糙的伪随机算法
     public void fillMatrixRandomly(GMatrix matrix, double lowerLimit, double upperLimit) {
         kRand.setArg(0, matrix.getArg());
         kRand.setArg(1, (float) lowerLimit);
@@ -106,6 +109,12 @@ public class GMath {
         queue.put1DRangeKernel(kRand, 0, matrix.M * matrix.N, 0);
     }
 
+    /**
+     * 将两个矩阵相乘并将结果保存在第三个矩阵中
+     * @param m1 输入矩阵1
+     * @param m2 输入矩阵2
+     * @param mr 保存结果的矩阵
+     */
     public void multiply(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == mr.M
             && m1.N == m2.M
@@ -123,6 +132,14 @@ public class GMath {
         }
     }
     
+    /**
+     * 将两个矩阵相乘并将结果保存在第三个矩阵中
+     * 
+     * @param m1 输入矩阵1
+     * @param m2 输入矩阵2
+     * @param mr 保存结果的矩阵
+     * @deprecated 这个方法尚未完成，只能处理M和P能被2整除的情况(在这种情况下性能有80%左右的提升)           
+     */
     public void multiply2(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == mr.M
             && m1.N == m2.M
@@ -142,8 +159,17 @@ public class GMath {
         }
     }
     
+    
     final int WORK_ITEM_M = 8;
     final int WORK_ITEM_N = 8;
+    /**
+     * 将两个矩阵相乘并将结果保存在第三个矩阵中
+     * 
+     * @param m1 输入矩阵1
+     * @param m2 输入矩阵2
+     * @param mr 保存结果的矩阵
+     * @deprecated 这个方法尚未完成，只能处理M和P能被8整除的情况(在这种情况下性能有最高10倍左右的提升)           
+     */
     public void multiplyN(GMatrix m1, GMatrix m2, GMatrix mr) {
         if (m1.M == mr.M
             && m1.N == m2.M
@@ -157,12 +183,18 @@ public class GMath {
             kMatrixMultiplyN.setArg(3, m1.M);
             kMatrixMultiplyN.setArg(4, m1.N);
             kMatrixMultiplyN.setArg(5, m2.N);
-            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.M/WORK_ITEM_M, m2.N/WORK_ITEM_N , 0, 0);
+            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.M/WORK_ITEM_M, m2.N/WORK_ITEM_N, 0, 0);
         } else {
             throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
         }
     }
     
+    
+    /**
+     * 将输入矩阵中的值经过sigmoid函数计算后储存在结果矩阵中
+     * @param inputMatrix 输入矩阵
+     * @param resultMatrix 结果矩阵
+     */
     public void sigmoid(GMatrix inputMatrix, GMatrix resultMatrix) {
         if (inputMatrix.M == resultMatrix.M
                 && inputMatrix.M == resultMatrix.M) {
@@ -177,6 +209,12 @@ public class GMath {
 
     private CLBuffer<IntBuffer>  isEqualResultBuffer;
     private boolean isEqualResultBufferInited = false;
+    /**
+     * 比较两个矩阵是否相等
+     * @param m1 矩阵1
+     * @param m2 矩阵2
+     * @return 如果矩阵相等返回true
+     */
     public boolean isEqual(GMatrix m1, GMatrix m2) {
         if (m1.M == m2.M && m1.N == m2.N) {
             if(!isEqualResultBufferInited) {
@@ -201,6 +239,9 @@ public class GMath {
         }
     }
     
+    /**
+     * 等待队列中计算全部完成
+     */
     public void finish() {
         queue.finish();
     }
@@ -220,10 +261,8 @@ public class GMath {
 
     /**
      * 创建不合法参数异常，同时释放资源
-     * 
-     * @param message
-     *            包含的信息
-     * @return IllegalArgument异常
+     * @param message 包含的信息
+     * @return IllegalArgument 异常
      */
     private IllegalArgumentException newIllegalArgumentException(String message) {
         this.release();

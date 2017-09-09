@@ -49,12 +49,17 @@ kernel void matrixMultiply2(
     float sum[2][2];
     float data[2][2];
     
+    sum[0][0] = 0;
+    sum[0][1] = 0;
+    sum[1][0] = 0;
+    sum[1][1] = 0;
+    
     for(int i = 0; i < N; i++) {
         data[0][0] = m1[mID * N + i];
         data[0][1] = m1[mID * N + i + N];
         data[1][0] = m2[nID + i * P];
         data[1][1] = m2[nID + i * P + 1];
-
+        
         sum[0][0] += data[0][0] * data[1][0];
         sum[0][1] += data[0][0] * data[1][1];
         sum[1][0] += data[0][1] * data[1][0];
@@ -80,24 +85,36 @@ kernel void matrixMultiplyN(
     float data1[WORK_ITEM_M];
     float data2[WORK_ITEM_N];
     
-    for(int n = 0; n < N; n++) {
-        for(int i = 0; i < WORK_ITEM_M; i++) {
-            data1[i] = m1[(mID + i) * N + n];
-        }
-        for(int i = 0; i < WORK_ITEM_N; i++) {
-            data2[i] = m2[nID + n * P + i];
-        }
-        
-        for(int m = 0; m < WORK_ITEM_M; m++) {
-            for(int n = 0; n < WORK_ITEM_N; n++) {
-                sum[m][n] += data1[m] * data2[n];
+    if(M - mID >= WORK_ITEM_M && P - nID >= WORK_ITEM_N) {
+        for(int n = 0; n < N; n++) {
+            for(int i = 0; i < WORK_ITEM_M; i++) {
+                data1[i] = m1[(mID + i) * N + n];
+            }
+            for(int i = 0; i < WORK_ITEM_N; i++) {
+                data2[i] = m2[nID + n * P + i];
+            }
+            
+            if(n == 0) {
+                for(int m = 0; m < WORK_ITEM_M; m++) {
+                    for(int n = 0; n < WORK_ITEM_N; n++) {
+                        sum[m][n] = data1[m] * data2[n];
+                    }
+                }
+            } else {
+                for(int m = 0; m < WORK_ITEM_M; m++) {
+                    for(int n = 0; n < WORK_ITEM_N; n++) {
+                        sum[m][n] += data1[m] * data2[n];
+                    }
+                }
             }
         }
-    }
-    for(int m = 0; m < WORK_ITEM_M; m++) {
-        for(int n = 0; n < WORK_ITEM_N; n++) {
-            mr[(mID + m) * P + nID + n] = sum[m][n];
+        for(int m = 0; m < WORK_ITEM_M; m++) {
+            for(int n = 0; n < WORK_ITEM_N; n++) {
+                mr[(mID + m) * P + nID + n] = sum[m][n];
+            }
         }
+    } else {
+        
     }
 }
 
