@@ -9,7 +9,7 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 
-public class GMatrix {
+public class Matrix {
 
     public final int M;
     public final int N;
@@ -24,7 +24,7 @@ public class GMatrix {
      * @param m 矩阵的行数
      * @param n 矩阵的列数
      */
-    public GMatrix(CLContext context, CLCommandQueue queue, int m, int n) {
+    public Matrix(CLContext context, CLCommandQueue queue, int m, int n) {
         this.matrixBuffer = context.createFloatBuffer(m * n, READ_WRITE);
         this.queue = queue;
         this.M = m;
@@ -39,7 +39,7 @@ public class GMatrix {
      * @param queue context对应的queue
      * @param data 储存数据的二维数组
      */
-    public GMatrix(CLContext context, CLCommandQueue queue, double[][] data) {
+    public Matrix(CLContext context, CLCommandQueue queue, double[][] data) {
         int m = data.length;
         int n = data[0].length;
         this.matrixBuffer = context.createFloatBuffer(m * n, READ_WRITE);

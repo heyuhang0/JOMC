@@ -9,5 +9,4 @@ public class GMathTest {
 
         gpu.release();
     }
-    
 }
