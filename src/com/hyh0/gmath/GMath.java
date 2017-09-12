@@ -22,11 +22,13 @@ public class GMath {
     private CLProgram program;
 
     private CLKernel kMatrixAdd;
+    private CLKernel kMatrixSubtract;
     private CLKernel kRand;
     private CLKernel kMatrixMultiply;
     private CLKernel kMatrixMultiplyN;
     private CLKernel kSigmoid;
     private CLKernel kCompare;
+    private CLKernel kScalarMultiply;
 
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
@@ -40,11 +42,13 @@ public class GMath {
         try {
             program = context.createProgram(GMath.class.getResourceAsStream("GMath.cl")).build();
             kMatrixAdd = program.createCLKernel("matrixAdd");
+            kMatrixSubtract = program.createCLKernel("matrixSubtract");
             kRand = program.createCLKernel("rand");
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
             kMatrixMultiplyN = program.createCLKernel("matrixMultiplyN");
             kSigmoid = program.createCLKernel("sigmoid");
             kCompare = program.createCLKernel("compare");
+            kScalarMultiply = program.createCLKernel("matrixScalarMultiply");
         } catch (IOException e) {
             this.release();
             e.printStackTrace();
@@ -65,7 +69,7 @@ public class GMath {
      * @return 一个Matrix的矩阵对象
      */
     public Matrix newMatrix(int m, int n) {
-        return new Matrix(context, queue, m, n);
+        return new Matrix(this, context, queue, m, n);
     }
 
     /**
@@ -75,7 +79,7 @@ public class GMath {
      * @return
      */
     public Matrix newMatrix(double[][] data) {
-        return new Matrix(context, queue, data);
+        return new Matrix(this, context, queue, data);
     }
 
     /**
@@ -98,7 +102,44 @@ public class GMath {
             throw newIllegalArgumentException("矩阵的大小不同,无法相加");
         }
     }
+    
+    /**
+     * 将两个矩阵相减并将结果保存在第三个矩阵中
+     * 
+     * @param m1
+     *            输入矩阵1
+     * @param m2
+     *            输入矩阵2
+     * @param mr
+     *            保存结果的矩阵
+     */
+    public void substract(Matrix m1, Matrix m2, Matrix mr) {
+        if (m1.M == m2.M && m1.M == mr.M && m1.N == m2.N && m1.N == mr.N) {
+            kMatrixSubtract.setArg(0, m1.getArg());
+            kMatrixSubtract.setArg(1, m2.getArg());
+            kMatrixSubtract.setArg(2, mr.getArg());
+            queue.put1DRangeKernel(kMatrixSubtract, 0, m1.M * m1.N, 0); // 执行内核
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不同,无法相减");
+        }
+    }
 
+    /**
+     * 矩阵数乘
+     * @param m 被数乘的矩阵
+     * @param k 常数项
+     * @param result 储存结果的矩阵
+     */
+    public void multiply(Matrix m, double k, Matrix result) {
+        if(m.M == result.M && m.N == result.N) {
+            kScalarMultiply.setArg(0, m.getArg());
+            kScalarMultiply.setArg(1, (float)k);
+            kScalarMultiply.setArg(2, result.getArg());
+            queue.put1DRangeKernel(kScalarMultiply, 0, m.M * m.N, 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不同,无法保存结果");
+        }
+    }
     /**
      * 用均匀随机数初始化矩阵
      * 

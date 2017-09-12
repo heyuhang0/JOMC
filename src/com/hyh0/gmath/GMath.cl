@@ -1,7 +1,13 @@
-// add m1 with m2 and save the result in mr
+// let mr = m1 + m2
 kernel void matrixAdd(global const float* m1, global const float* m2, global float* mr) {
     int iGID = get_global_id(0);
     mr[iGID] = m1[iGID] + m2[iGID];
+}
+
+// let mr = m1 - m2
+kernel void matrixSubtract(global const float* m1, global const float* m2, global float* mr) {
+ int iGID = get_global_id(0);
+ mr[iGID] = m1[iGID] - m2[iGID];
 }
 
 // fill matrix with random number (now it is a test code for temporary use)
@@ -13,6 +19,12 @@ kernel void rand(global float* matrix, float lowerLimit, float upperLimit, int s
         seed = (66941 * seed + 92655) % 10000;
     }
     matrix[iGID] = (upperLimit - lowerLimit)/10000*seed + lowerLimit;
+}
+
+// let mr = k * m
+kernel void matrixScalarMultiply(global const float* m, float k, global float* mr) {
+    int iGID = get_global_id(0);
+    mr[iGID] = m[iGID] * k;
 }
 
 // let mr = m1 * m2
@@ -37,6 +49,11 @@ kernel void matrixMultiply(
     mr[mID * P + nID] = sum;
 }
 
+// let mr = m1 * m2
+// M : number of rows in m1 (must can be divisible by 8)
+// N : number of rows in m2 (also number of columns in m1) (must can be divisible by 8)
+// P : number of columns in m2
+// this function is faster than the one above
 #define WORK_ITEM_M 8
 #define WORK_ITEM_N 8
 kernel void matrixMultiplyN(
@@ -89,6 +106,8 @@ kernel void sigmoid(
     resultMatrix[id] = 1.0 / (1.0 + exp(-inputMatrix[id]));
 }
 
+// compare two matrix
+// and save the number of elements that are differnt in result
 #define ERROR_ALLOWED 0.0000001
 kernel void compare(global const float* m1, global const float* m2, global int* result) {
     int id = get_global_id(0);
