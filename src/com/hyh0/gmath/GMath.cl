@@ -21,6 +21,14 @@ kernel void rand(global float* matrix, float lowerLimit, float upperLimit, int s
     matrix[iGID] = (upperLimit - lowerLimit)/10000*seed + lowerLimit;
 }
 
+// transpose matrix
+kernel void transpose(global const float* matrix, global float* mr, int M, int N) {
+    int m = get_global_id(0);
+    int n = get_global_id(1);
+    
+    mr[n * M + m] = matrix[m * N + n];
+}
+
 // let mr = k * m
 kernel void matrixScalarMultiply(global const float* m, float k, global float* mr) {
     int iGID = get_global_id(0);

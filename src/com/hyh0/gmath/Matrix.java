@@ -137,6 +137,11 @@ public class Matrix {
         return result;
     }
     
+    public Matrix transpose(Matrix result) {
+        gmath.transpose(this, result);
+        return result;
+    }
+    
     /**
      * 比较两个矩阵是否相等
      */

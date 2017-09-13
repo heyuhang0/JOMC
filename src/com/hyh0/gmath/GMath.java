@@ -29,6 +29,7 @@ public class GMath {
     private CLKernel kSigmoid;
     private CLKernel kCompare;
     private CLKernel kScalarMultiply;
+    private CLKernel kTranspose;
 
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
@@ -49,6 +50,7 @@ public class GMath {
             kSigmoid = program.createCLKernel("sigmoid");
             kCompare = program.createCLKernel("compare");
             kScalarMultiply = program.createCLKernel("matrixScalarMultiply");
+            kTranspose = program.createCLKernel("transpose");
         } catch (IOException e) {
             this.release();
             e.printStackTrace();
@@ -82,6 +84,17 @@ public class GMath {
         return new Matrix(this, context, queue, data);
     }
 
+    public void transpose(Matrix m, Matrix result) {
+        if (m.M == result.N && m.N == result.M) {
+            kTranspose.setArg(0,  m.getArg());
+            kTranspose.setArg(1, result.getArg());
+            kTranspose.setArg(2, m.M);
+            kTranspose.setArg(3, m.N);
+            queue.put2DRangeKernel(kTranspose, 0, 0, m.M, m.N, 0, 0);
+        } else {
+            throw newIllegalArgumentException("矩阵大小不符合转制条件");
+        }
+    }
     /**
      * 将两个矩阵相加并将结果保存在第三个矩阵中
      * 
