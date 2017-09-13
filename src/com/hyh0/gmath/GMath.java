@@ -73,6 +73,14 @@ public class GMath {
     public Matrix newMatrix(int m, int n) {
         return new Matrix(this, context, queue, m, n);
     }
+    
+    /**
+     * 创建一个方阵
+     * @param n 矩阵阶数
+     */
+    public Matrix newMatrix(int n) {
+        return newMatrix(n, n);
+    }
 
     /**
      * 创建一个与二维数组数据相同的矩阵
@@ -83,16 +91,34 @@ public class GMath {
     public Matrix newMatrix(double[][] data) {
         return new Matrix(this, context, queue, data);
     }
-
+    
+    /**
+     * 创建一个单位矩阵
+     * @param n 单位矩阵阶数
+     */
+    public Matrix newUnitMatrix(int n) {
+        double data[][] = new double[n][n];
+        for(int i = 0; i < n; i++) {
+            data[i][i] = 1;
+        }
+        return newMatrix(data); 
+    }
+    /**
+     * 转置矩阵
+     * @param 原矩阵
+     * @param 储存结果的矩阵(不能与原矩阵相同)
+     */
     public void transpose(Matrix m, Matrix result) {
-        if (m.M == result.N && m.N == result.M) {
+        if (m.M != result.N || m.N != result.M) {
+            throw newIllegalArgumentException("矩阵大小不符合转制条件");
+        } else if (m == result) {
+            throw newIllegalArgumentException("转置矩阵的原矩阵与结果矩阵不能相同");
+        } else {
             kTranspose.setArg(0,  m.getArg());
             kTranspose.setArg(1, result.getArg());
             kTranspose.setArg(2, m.M);
             kTranspose.setArg(3, m.N);
             queue.put2DRangeKernel(kTranspose, 0, 0, m.M, m.N, 0, 0);
-        } else {
-            throw newIllegalArgumentException("矩阵大小不符合转制条件");
         }
     }
     /**
