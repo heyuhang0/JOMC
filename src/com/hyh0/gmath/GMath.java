@@ -36,6 +36,7 @@ public class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
+        System.out.println("正在初始化OpenCL");
         context = CLContext.create();
         Tools.println(context);
         device = context.getMaxFlopsDevice();
@@ -302,7 +303,7 @@ public class GMath {
      *            矩阵2
      * @return 如果矩阵相等返回true
      */
-    public boolean isEqual(Matrix m1, Matrix m2) {
+    public boolean compare(Matrix m1, Matrix m2) {
         if (m1.M == m2.M && m1.N == m2.N) {
             if (!isEqualResultBufferInited) {
                 isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
