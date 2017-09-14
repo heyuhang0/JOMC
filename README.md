@@ -1,3 +1,4 @@
+
 # OpenCL_Matrix_Computing
 用Java实现的基于OpenCl的矩阵运算库，使用了类似JAMA的接口。
 
@@ -25,17 +26,27 @@ Matrix.releaseAll();// 释放资源
 
 测试样本: 3000*3000矩阵乘法
 
-
 JAMA: 45s
+
+Octave: 1.8s
 
 本库(CPU): 4.8s
 
 本库(GPU): 3.6s
 
+测试样本: 3000*3000矩阵加法
+
+JAMA: 0.08s
+
+Octave: 0.05s
+
+本库(CPU): 0.012s
+
+本库(GPU): 0.012s
 
 ## 当前实现的功能
 ### 对象操作
-consructor
+constructor
 
 set elements
 
@@ -53,7 +64,7 @@ addition
 
 subtraction
 
-multiplycation
+multiplication
 
 scalar multiplication 
 
