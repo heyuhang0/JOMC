@@ -14,7 +14,7 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLProgram;
 
-public class GMath {
+class GMath {
 
     private CLContext context;
     private CLDevice device;
@@ -36,7 +36,6 @@ public class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
-        System.out.println("正在初始化OpenCL");
         context = CLContext.create();
         Tools.println(context);
         device = context.getMaxFlopsDevice();
@@ -65,73 +64,31 @@ public class GMath {
     }
 
     /**
-     * 创建一个矩阵对象
-     * 
-     * @param m
-     *            矩阵的行数
-     * @param n
-     *            矩阵的列数
-     * @return 一个Matrix的矩阵对象
-     */
-    public Matrix newMatrix(int m, int n) {
-        return new Matrix(this, context, queue, m, n);
-    }
-    
-    /**
-     * 创建一个方阵
-     * @param n 矩阵阶数
-     */
-    public Matrix newMatrix(int n) {
-        return newMatrix(n, n);
-    }
-
-    /**
-     * 创建一个与二维数组数据相同的矩阵
-     * 
-     * @param data
-     * @return
-     */
-    public Matrix newMatrix(double[][] data) {
-        return new Matrix(this, context, queue, data);
-    }
-    
-    /**
-     * 创建一个单位矩阵
-     * @param n 单位矩阵阶数
-     */
-    public Matrix newUnitMatrix(int n) {
-        double data[][] = new double[n][n];
-        for(int i = 0; i < n; i++) {
-            data[i][i] = 1;
-        }
-        return newMatrix(data); 
-    }
-    /**
      * 转置矩阵
      * @param 原矩阵
      * @param 储存结果的矩阵(不能与原矩阵相同)
      */
     public void transpose(Matrix m, Matrix result) {
-        if (m.M != result.N || m.N != result.M) {
+        if (m.getRowDimension() != result.getColumnDimension() || m.getColumnDimension() != result.getRowDimension()) {
             throw newIllegalArgumentException("矩阵大小不符合转制条件");
         } else if (m == result) {
             throw newIllegalArgumentException("转置矩阵的原矩阵与结果矩阵不能相同");
         } else {
             kTranspose.setArg(0,  m.getArg());
             kTranspose.setArg(1, result.getArg());
-            kTranspose.setArg(2, m.M);
-            kTranspose.setArg(3, m.N);
-            queue.put2DRangeKernel(kTranspose, 0, 0, m.M, m.N, 0, 0);
+            kTranspose.setArg(2, m.getRowDimension());
+            kTranspose.setArg(3, m.getColumnDimension());
+            queue.put2DRangeKernel(kTranspose, 0, 0, m.getRowDimension(), m.getColumnDimension(), 0, 0);
         }
     }
     
     public void copy(Matrix originalMatrix, Matrix newMatrix) {
-        if (originalMatrix.M != newMatrix.M || originalMatrix.N != newMatrix.N) {
+        if (originalMatrix.getRowDimension() != newMatrix.getRowDimension() || originalMatrix.getColumnDimension() != newMatrix.getColumnDimension()) {
             throw newIllegalArgumentException("矩阵大小不符");
         } else {
             kCopy.setArg(0, originalMatrix.getArg());
             kCopy.setArg(1, newMatrix.getArg());
-            queue.put1DRangeKernel(kCopy, 0, originalMatrix.M * originalMatrix.N, 0);
+            queue.put1DRangeKernel(kCopy, 0, originalMatrix.getRowDimension() * originalMatrix.getColumnDimension(), 0);
         }
     }
     /**
@@ -145,11 +102,14 @@ public class GMath {
      *            保存结果的矩阵
      */
     public void add(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.M == m2.M && m1.M == mr.M && m1.N == m2.N && m1.N == mr.N) {
+        if (m1.getRowDimension() == m2.getRowDimension() 
+                && m1.getRowDimension() == mr.getRowDimension() 
+                && m1.getColumnDimension() == m2.getColumnDimension() 
+                && m1.getColumnDimension() == mr.getColumnDimension()) {
             kMatrixAdd.setArg(0, m1.getArg());
             kMatrixAdd.setArg(1, m2.getArg());
             kMatrixAdd.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kMatrixAdd, 0, m1.M * m1.N, 0); // 执行内核
+            queue.put1DRangeKernel(kMatrixAdd, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
         } else {
             throw newIllegalArgumentException("矩阵的大小不同,无法相加");
         }
@@ -166,11 +126,14 @@ public class GMath {
      *            保存结果的矩阵
      */
     public void substract(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.M == m2.M && m1.M == mr.M && m1.N == m2.N && m1.N == mr.N) {
+        if (m1.getRowDimension() == m2.getRowDimension() 
+                && m1.getRowDimension() == mr.getRowDimension() 
+                && m1.getColumnDimension() == m2.getColumnDimension() 
+                && m1.getColumnDimension() == mr.getColumnDimension()) {
             kMatrixSubtract.setArg(0, m1.getArg());
             kMatrixSubtract.setArg(1, m2.getArg());
             kMatrixSubtract.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kMatrixSubtract, 0, m1.M * m1.N, 0); // 执行内核
+            queue.put1DRangeKernel(kMatrixSubtract, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
         } else {
             throw newIllegalArgumentException("矩阵的大小不同,无法相减");
         }
@@ -183,11 +146,12 @@ public class GMath {
      * @param result 储存结果的矩阵
      */
     public void multiply(Matrix m, double k, Matrix result) {
-        if(m.M == result.M && m.N == result.N) {
+        if(m.getRowDimension() == result.getRowDimension() 
+                && m.getColumnDimension() == result.getColumnDimension()) {
             kScalarMultiply.setArg(0, m.getArg());
             kScalarMultiply.setArg(1, (float)k);
             kScalarMultiply.setArg(2, result.getArg());
-            queue.put1DRangeKernel(kScalarMultiply, 0, m.M * m.N, 0);
+            queue.put1DRangeKernel(kScalarMultiply, 0, m.getRowDimension() * m.getColumnDimension(), 0);
         } else {
             throw newIllegalArgumentException("矩阵的大小不同,无法保存结果");
         }
@@ -208,7 +172,7 @@ public class GMath {
         kRand.setArg(1, (float) lowerLimit);
         kRand.setArg(2, (float) upperLimit);
         kRand.setArg(3, (int) (Math.random() * 100));
-        queue.put1DRangeKernel(kRand, 0, matrix.M * matrix.N, 0);
+        queue.put1DRangeKernel(kRand, 0, matrix.getRowDimension() * matrix.getColumnDimension(), 0);
     }
 
     /**
@@ -224,46 +188,48 @@ public class GMath {
     public void multiply(Matrix m1, Matrix m2, Matrix mr) {
         final int MULTIPLY_WORK_ITEM_M = 8;
         final int MULTIPLY_WORK_ITEM_N = 8;
-        if (m1.M == mr.M && m1.N == m2.M && m2.N == mr.N) {
+        if (m1.getRowDimension() == mr.getRowDimension() 
+                && m1.getColumnDimension() == m2.getRowDimension() 
+                && m2.getColumnDimension() == mr.getColumnDimension()) {
 
-            int globalWorkSizeM = m1.M / MULTIPLY_WORK_ITEM_M; // 向下取整
-            int globalWorkSizeN = m2.N / MULTIPLY_WORK_ITEM_N;
+            int globalWorkSizeM = m1.getRowDimension() / MULTIPLY_WORK_ITEM_M; // 向下取整
+            int globalWorkSizeN = m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N;
 
             int offsetM = globalWorkSizeM * MULTIPLY_WORK_ITEM_M;
             int offsetN = globalWorkSizeN * MULTIPLY_WORK_ITEM_N;
 
-            int globalWorkSizeReamainM = m1.M - offsetM;
-            int globalWorkSizeReamainN = m2.N - offsetN;
+            int globalWorkSizeReamainM = m1.getRowDimension() - offsetM;
+            int globalWorkSizeReamainN = m2.getColumnDimension() - offsetN;
 
             if (globalWorkSizeM != 0 && globalWorkSizeN != 0) {
                 kMatrixMultiplyN.setArg(0, m1.getArg());
                 kMatrixMultiplyN.setArg(1, m2.getArg());
                 kMatrixMultiplyN.setArg(2, mr.getArg());
-                kMatrixMultiplyN.setArg(3, m1.M);
-                kMatrixMultiplyN.setArg(4, m1.N);
-                kMatrixMultiplyN.setArg(5, m2.N);
-                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.M / MULTIPLY_WORK_ITEM_M, m2.N / MULTIPLY_WORK_ITEM_N,
+                kMatrixMultiplyN.setArg(3, m1.getRowDimension());
+                kMatrixMultiplyN.setArg(4, m1.getColumnDimension());
+                kMatrixMultiplyN.setArg(5, m2.getRowDimension());
+                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N,
                         0, 0);
             }
 
-            if (m1.M % MULTIPLY_WORK_ITEM_M != 0) {
+            if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
                 kMatrixMultiply.setArg(0, m1.getArg());
                 kMatrixMultiply.setArg(1, m2.getArg());
                 kMatrixMultiply.setArg(2, mr.getArg());
-                kMatrixMultiply.setArg(3, m1.M);
-                kMatrixMultiply.setArg(4, m1.N);
-                kMatrixMultiply.setArg(5, m2.N);
-                queue.put2DRangeKernel(kMatrixMultiply, offsetM, 0, globalWorkSizeReamainM, m2.N, 0, 0);
+                kMatrixMultiply.setArg(3, m1.getRowDimension());
+                kMatrixMultiply.setArg(4, m1.getColumnDimension());
+                kMatrixMultiply.setArg(5, m2.getColumnDimension());
+                queue.put2DRangeKernel(kMatrixMultiply, offsetM, 0, globalWorkSizeReamainM, m2.getColumnDimension(), 0, 0);
             }
 
-            if (m2.N % MULTIPLY_WORK_ITEM_N != 0 && m1.M > globalWorkSizeReamainM) {
+            if (m2.getColumnDimension() % MULTIPLY_WORK_ITEM_N != 0 && m1.getRowDimension() > globalWorkSizeReamainM) {
                 kMatrixMultiply.setArg(0, m1.getArg());
                 kMatrixMultiply.setArg(1, m2.getArg());
                 kMatrixMultiply.setArg(2, mr.getArg());
-                kMatrixMultiply.setArg(3, m1.M);
-                kMatrixMultiply.setArg(4, m1.N);
-                kMatrixMultiply.setArg(5, m2.N);
-                queue.put2DRangeKernel(kMatrixMultiply, 0, offsetN, m1.M - globalWorkSizeReamainM,
+                kMatrixMultiply.setArg(3, m1.getRowDimension());
+                kMatrixMultiply.setArg(4, m1.getColumnDimension());
+                kMatrixMultiply.setArg(5, m2.getColumnDimension());
+                queue.put2DRangeKernel(kMatrixMultiply, 0, offsetN, m1.getRowDimension() - globalWorkSizeReamainM,
                         globalWorkSizeReamainN, 0, 0);
             }
 
@@ -281,11 +247,11 @@ public class GMath {
      *            结果矩阵
      */
     public void sigmoid(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.M == resultMatrix.M && inputMatrix.M == resultMatrix.M) {
+        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() && inputMatrix.getRowDimension() == resultMatrix.getRowDimension()) {
             kSigmoid.setArg(0, inputMatrix.getArg());
             kSigmoid.setArg(1, resultMatrix.getArg());
 
-            queue.put1DRangeKernel(kSigmoid, 0, inputMatrix.M * inputMatrix.N, 0);
+            queue.put1DRangeKernel(kSigmoid, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
         } else {
             throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
         }
@@ -304,7 +270,7 @@ public class GMath {
      * @return 如果矩阵相等返回true
      */
     public boolean compare(Matrix m1, Matrix m2) {
-        if (m1.M == m2.M && m1.N == m2.N) {
+        if (m1.getRowDimension() == m2.getRowDimension() && m1.getColumnDimension() == m2.getColumnDimension()) {
             if (!isEqualResultBufferInited) {
                 isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
             }
@@ -315,7 +281,7 @@ public class GMath {
             kCompare.setArg(0, m1.getArg());
             kCompare.setArg(1, m2.getArg());
             kCompare.setArg(2, isEqualResultBuffer);
-            queue.put1DRangeKernel(kCompare, 0, m1.M * m2.N, 0);
+            queue.put1DRangeKernel(kCompare, 0, m1.getRowDimension() * m2.getColumnDimension(), 0);
             queue.putReadBuffer(isEqualResultBuffer, true);
 
             if (isEqualResultBuffer.getBuffer().get(0) > 0)
@@ -334,6 +300,14 @@ public class GMath {
         queue.finish();
     }
 
+    public CLCommandQueue getQueue() {
+        return this.queue;
+    }
+    
+    public CLContext getContext() {
+        return this.context;
+    }
+    
     @Override
     protected void finalize() {
         this.release();

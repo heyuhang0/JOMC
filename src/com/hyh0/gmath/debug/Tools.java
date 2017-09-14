@@ -5,7 +5,7 @@ import java.io.IOException;
 public class Tools {
     
     
-    final static boolean showMessages = true;
+    final static boolean showMessages = false;
     public static void println(String message) {
         if(showMessages)
             System.out.println("$: " + message);
