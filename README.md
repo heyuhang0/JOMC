@@ -6,13 +6,14 @@
 
 Matrix.init(); // 初始化OpenCl,大约用时5s
 
-double[][] data = { { 1, 2, 3 }, { 4, 5, 6 } };
+double[]
+[] data = { { 1, 2, 3 }, { 4, 5, 6 } };
 
 Matrix A = new Matrix(data); // 通过二维数组创建矩阵
 
 Matrix B = new Matrix(2, 3, 1); // 创建一个2*3且全部填充1的矩阵
 
-B.set(1, 2, 0.5); // 将 B[1][2] 设置为 0.5
+B.set(1, 2, 0.5); // 将 B(1)(2) 设置为 0.5
 
 A.plusEquals(B); // A += B
 
