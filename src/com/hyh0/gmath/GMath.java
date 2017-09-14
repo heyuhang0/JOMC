@@ -30,7 +30,8 @@ public class GMath {
     private CLKernel kCompare;
     private CLKernel kScalarMultiply;
     private CLKernel kTranspose;
-
+    private CLKernel kCopy;
+    
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
@@ -51,6 +52,7 @@ public class GMath {
             kCompare = program.createCLKernel("compare");
             kScalarMultiply = program.createCLKernel("matrixScalarMultiply");
             kTranspose = program.createCLKernel("transpose");
+            kCopy = program.createCLKernel("copy");
         } catch (IOException e) {
             this.release();
             e.printStackTrace();
@@ -119,6 +121,16 @@ public class GMath {
             kTranspose.setArg(2, m.M);
             kTranspose.setArg(3, m.N);
             queue.put2DRangeKernel(kTranspose, 0, 0, m.M, m.N, 0, 0);
+        }
+    }
+    
+    public void copy(Matrix originalMatrix, Matrix newMatrix) {
+        if (originalMatrix.M != newMatrix.M || originalMatrix.N != newMatrix.N) {
+            throw newIllegalArgumentException("矩阵大小不符");
+        } else {
+            kCopy.setArg(0, originalMatrix.getArg());
+            kCopy.setArg(1, newMatrix.getArg());
+            queue.put1DRangeKernel(kCopy, 0, originalMatrix.M * originalMatrix.N, 0);
         }
     }
     /**

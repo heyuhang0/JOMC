@@ -29,6 +29,12 @@ kernel void transpose(global const float* matrix, global float* mr, int M, int N
     mr[n * M + m] = matrix[m * N + n];
 }
 
+// copy a matrix
+kernel void copy(global const float* originalMatrix, global float* newMatrix) {
+    int id = get_global_id(0);
+    newMatrix[id] = originalMatrix[id];
+}
+
 // let mr = k * m
 kernel void matrixScalarMultiply(global const float* m, float k, global float* mr) {
     int iGID = get_global_id(0);

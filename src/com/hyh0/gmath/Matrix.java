@@ -16,7 +16,7 @@ public class Matrix {
     private final CLBuffer<FloatBuffer> matrixBuffer;
     private final CLCommandQueue queue;
     private final CLContext context;
-    private final GMath gmath;
+    private final GMath gMath;
 
     /**
      * 创建一个新矩阵
@@ -36,7 +36,7 @@ public class Matrix {
         this.M = m;
         this.N = n;
         this.context = context;
-        this.gmath = gmath;
+        this.gMath = gmath;
         syncToDevice();
     }
 
@@ -58,7 +58,7 @@ public class Matrix {
         this.M = m;
         this.N = n;
         this.context = context;
-        this.gmath = gmath;
+        this.gMath = gmath;
         this.syncToDevice();
         this.set(data);
     }
@@ -72,7 +72,7 @@ public class Matrix {
      *            随机数上限
      */
     public void randomize(double lowerLimit, double upperLimit) {
-        gmath.fillMatrixRandomly(this, lowerLimit, upperLimit);
+        gMath.fillMatrixRandomly(this, lowerLimit, upperLimit);
     }
 
     /**
@@ -84,7 +84,7 @@ public class Matrix {
      *            随机数上限
      */
     public void randomize() {
-        gmath.fillMatrixRandomly(this, -1, 1);
+        gMath.fillMatrixRandomly(this, -1, 1);
     }
 
     /**
@@ -93,7 +93,7 @@ public class Matrix {
      * @return result矩阵，方便进行连续运算
      */
     public Matrix add(Matrix matrixBeAdded, Matrix result) {
-        gmath.add(this, matrixBeAdded, result);
+        gMath.add(this, matrixBeAdded, result);
         return result;
     }
 
@@ -103,7 +103,7 @@ public class Matrix {
      * @return result矩阵，方便进行连续运算
      */
     public Matrix multiply(Matrix multiplier, Matrix result) {
-        gmath.multiply(this, multiplier, result);
+        gMath.multiply(this, multiplier, result);
         return result;
     }
 
@@ -113,7 +113,7 @@ public class Matrix {
      * @return result矩阵，方便进行连续运算
      */
     public Matrix multiply(double k, Matrix result) {
-        gmath.multiply(this, k, result);
+        gMath.multiply(this, k, result);
         return result;
     }
 
@@ -123,7 +123,7 @@ public class Matrix {
      * @return result矩阵，方便进行连续运算
      */
     public Matrix subtract(Matrix subtrahend, Matrix result) {
-        gmath.substract(this, subtrahend, result);
+        gMath.substract(this, subtrahend, result);
         return result;
     }
 
@@ -133,20 +133,31 @@ public class Matrix {
      * @return result矩阵，方便进行连续运算
      */
     public Matrix sigmoid(Matrix result) {
-        gmath.sigmoid(this, result);
+        gMath.sigmoid(this, result);
         return result;
     }
     
+    /**
+     * 将矩阵的转置矩阵储存在新矩阵中
+     */
     public Matrix transpose(Matrix result) {
-        gmath.transpose(this, result);
+        gMath.transpose(this, result);
         return result;
+    }
+    
+    /**
+     *  将矩阵复制到新的矩阵中
+     */
+    public Matrix copyTo(Matrix newMatrix) {
+        gMath.copy(this, newMatrix);
+        return newMatrix;
     }
     
     /**
      * 比较两个矩阵是否相等
      */
     public boolean isEqualTo(Matrix anothor) {
-        return gmath.isEqual(this, anothor);
+        return gMath.isEqual(this, anothor);
     }
 
     /**
