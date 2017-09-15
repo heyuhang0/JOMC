@@ -48,7 +48,8 @@ class GMath {
     private CLKernel kExp10;
     private CLKernel kSqrt;
     private CLKernel kRsqrt;
-    private CLKernel kPow;
+    private CLKernel kPow; // 以矩阵元素为底，另一个数为指数
+    private CLKernel kPow2; // 以另一个数为底，另一个元素为指数
     private CLKernel kPown;
     private CLKernel kSigmoid;
     
@@ -94,6 +95,7 @@ class GMath {
             kSqrt = program.createCLKernel("kSqrt");
             kRsqrt = program.createCLKernel("kRsqrt");
             kPow = program.createCLKernel("kPow");
+            kPow2 = program.createCLKernel("kPow2");
             kPown = program.createCLKernel("kPown");
         } catch (IOException e) {
             this.release();
@@ -525,6 +527,17 @@ class GMath {
             kPow.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
             kPow.setArg(2, (float)power);
             queue.put1DRangeKernel(kPow, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+        } else {
+            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
+        }
+    }
+    
+    public void pow(double power, Matrix inputMatrix, Matrix resultMatrix) {
+        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
+                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
+            kPow2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+            kPow2.setArg(2, (float)power);
+            queue.put1DRangeKernel(kPow2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
         } else {
             throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
         }

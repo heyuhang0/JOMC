@@ -225,21 +225,21 @@ kernel void kExp(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log(inputMatrix[id]);
+    resultMatrix[id] = half_exp(inputMatrix[id]);
 }
 
 kernel void kExp2(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log2(inputMatrix[id]);
+    resultMatrix[id] = half_exp2(inputMatrix[id]);
 }
 
 kernel void kExp10(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log10(inputMatrix[id]);
+    resultMatrix[id] = half_exp10(inputMatrix[id]);
 }
 
 kernel void kSqrt(
@@ -264,18 +264,18 @@ kernel void kPow(
     resultMatrix[id] = pow(inputMatrix[id], power);
 }
 
+kernel void kPow2(
+        global const float* inputMatrix, 
+        global float* resultMatrix,
+        float power) {
+    int id = get_global_id(0);
+    resultMatrix[id] = pow(power, inputMatrix[id]);
+}
+
 kernel void kPown(
         global const float* inputMatrix, 
         global float* resultMatrix,
         int power) {
     int id = get_global_id(0);
     resultMatrix[id] = pown(inputMatrix[id], power);
-}
-
-kernel void kPowr(
-        global const float* inputMatrix, 
-        global float* resultMatrix,
-        float power) {
-    int id = get_global_id(0);
-    resultMatrix[id] = powr(inputMatrix[id], power);
 }
