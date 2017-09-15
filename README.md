@@ -1,6 +1,21 @@
 
-# OpenCL_Matrix_Computing
-用Java实现的基于OpenCl的矩阵运算库，使用了类似JAMA的接口。
+# JOMC
+JOMC = Java OpenCl Matrix Class
+
+JOMC是基于OpenCl*的Java矩阵运算库,使用了类似JAMA的接口,但有接近JBLAS*的性能
+
+*OpenCl的实现基于jogamp的JOCL库
+
+*在CPU模式下对比JBLAS的Native模式
+
+## 运行环境要求
+Windows下显卡驱动(intel, nvidia, amd)均包含了OpenCl,可以直接使用
+
+Linux下自行安装对应的驱动即可使用
+
+*服务器与虚拟机等没有显卡驱动的系统可以使用amd的驱动(适用于intel与amd)或intel的服务器驱动(只适用于intel)
+
+*未来计划支持Android
 
 ## 使用示例
 
@@ -34,6 +49,10 @@ Octave: 1.8s
 本库(CPU): 4.8s
 
 本库(GPU): 3.6s
+
+JBLAS(Java): 30s
+
+JBALAS(ATLAS): 3s
 
 测试样本: 3000*3000矩阵加法
 
