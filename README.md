@@ -2,39 +2,31 @@
 # JOMC
 JOMC = Java OpenCl Matrix Class
 
-JOMC是基于OpenCl*的Java矩阵运算库,使用了类似JAMA的接口,但有接近JBLAS*的性能
+JOMC是基于OpenCl\*的Java矩阵运算库,使用了类似JAMA的接口,但有接近JBLAS\*的性能
 
-*OpenCl的实现基于jogamp的JOCL库
+>OpenCl的实现基于jogamp的JOCL库
 
-*在CPU模式下对比JBLAS的Native模式
+>在CPU模式下对比JBLAS的Native模式
 
 ## 运行环境要求
 Windows下显卡驱动(intel, nvidia, amd)均包含了OpenCl,可以直接使用
 
 Linux下自行安装对应的驱动即可使用
 
-*服务器与虚拟机等没有显卡驱动的系统可以使用amd的驱动(适用于intel与amd)或intel的服务器驱动(只适用于intel)
+>服务器与虚拟机等没有显卡驱动的系统可以使用amd的驱动(适用于intel与amd)或intel的服务器驱动(只适用于intel)
 
-*未来计划支持Android
+>未来计划支持Android
 
 ## 使用示例
 
-Matrix.init(); // 初始化OpenCl,大约用时5s
-
-double[]
-[] data = { { 1, 2, 3 }, { 4, 5, 6 } };
-
-Matrix A = new Matrix(data); // 通过二维数组创建矩阵
-
-Matrix B = new Matrix(2, 3, 1); // 创建一个2*3且全部填充1的矩阵
-
-B.set(1, 2, 0.5); // 将 B(1)(2) 设置为 0.5
-
-A.plusEquals(B); // A += B
-
-A.print(); // 输出矩阵
-
-Matrix.releaseAll();// 释放资源
+        Matrix.init(); // 初始化OpenCl,大约用时5s
+        double[][] data = { { 1, 2, 3 }, { 4, 5, 6 } };
+        Matrix A = new Matrix(data); // 通过二维数组创建矩阵
+        Matrix B = new Matrix(2, 3, 1); // 创建一个2*3且全部填充1的矩阵
+        B.set(1, 2, 0.5); // 将 B(1)(2) 设置为 0.5
+        A.plusEquals(B); // A += B
+        A.print(); // 输出矩阵
+        Matrix.releaseAll();// 释放资源
 
 
 ## 性能
