@@ -1,6 +1,7 @@
 package com.hyh0.gmath.samples;
 
 import com.hyh0.gmath.Matrix;
+import com.hyh0.gmath.MatrixMath;
 
 class Basic {
 
@@ -45,7 +46,7 @@ class Basic {
         
         F.release(); // 释放F占用的资源
         F = new Matrix(2, 3);
-        E.sigmoid(F); // 计算F矩阵的sigmoid值
+        F = MatrixMath.sigmoid(E, F); // 计算E矩阵的sigmoid值
         System.out.println("F = sigmoid(E), F = ");
         F.print();
         

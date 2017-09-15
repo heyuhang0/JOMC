@@ -1,6 +1,7 @@
 package com.hyh0.gmath.samples;
 
 import com.hyh0.gmath.Matrix;
+import com.hyh0.gmath.MatrixMath;
 
 class Benchmark {
 
@@ -90,7 +91,7 @@ class Benchmark {
         System.out.println();
         
         resetTimer();
-        A.sigmoid(C);
+        C = MatrixMath.sigmoid(A, C);
         Matrix.finish();
         System.out.println("3000*3000 的矩阵sigmoid用时: ");
         showTimer();

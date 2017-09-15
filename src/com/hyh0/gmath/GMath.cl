@@ -117,15 +117,165 @@ kernel void sigmoid(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = 1.0 / (1.0 + exp(-inputMatrix[id]));
+    resultMatrix[id] = 1.0f / (1.0f + half_exp(-inputMatrix[id]));
 }
 
 // compare two matrix
 // and save the number of elements that are differnt in result
-#define ERROR_ALLOWED 0.0000001
+#define ERROR_ALLOWED 0.0000001f
 kernel void compare(global const float* m1, global const float* m2, global int* result) {
     int id = get_global_id(0);
     float error = m1[id] - m2[id];
     if(error > ERROR_ALLOWED || error < -ERROR_ALLOWED)
         atomic_inc(result);
+}
+
+kernel void kAbs(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = fabs(inputMatrix[id]);
+}
+
+kernel void kAcos(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = acos(inputMatrix[id]);
+}
+
+kernel void kAsin(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = asin(inputMatrix[id]);
+}
+
+kernel void kAtan(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = atan(inputMatrix[id]);
+}
+
+kernel void kCos(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_cos(inputMatrix[id]);
+}
+
+kernel void kSin(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_sin(inputMatrix[id]);
+}
+
+kernel void kTan(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_tan(inputMatrix[id]);
+}
+
+kernel void kCosh(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = cosh(inputMatrix[id]);
+}
+
+kernel void kSinh(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = sinh(inputMatrix[id]);
+}
+
+kernel void kTanh(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = tanh(inputMatrix[id]);
+}
+
+kernel void kLog(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log(inputMatrix[id]);
+}
+
+kernel void kLog2(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log2(inputMatrix[id]);
+}
+
+kernel void kLog10(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log10(inputMatrix[id]);
+}
+
+kernel void kExp(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log(inputMatrix[id]);
+}
+
+kernel void kExp2(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log2(inputMatrix[id]);
+}
+
+kernel void kExp10(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_log10(inputMatrix[id]);
+}
+
+kernel void kSqrt(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_sqrt(inputMatrix[id]);
+}
+
+kernel void kRsqrt(
+        global const float* inputMatrix, 
+        global float* resultMatrix) {
+    int id = get_global_id(0);
+    resultMatrix[id] = half_rsqrt(inputMatrix[id]);
+}
+
+kernel void kPow(
+        global const float* inputMatrix, 
+        global float* resultMatrix,
+        float power) {
+    int id = get_global_id(0);
+    resultMatrix[id] = pow(inputMatrix[id], power);
+}
+
+kernel void kPown(
+        global const float* inputMatrix, 
+        global float* resultMatrix,
+        int power) {
+    int id = get_global_id(0);
+    resultMatrix[id] = pown(inputMatrix[id], power);
+}
+
+kernel void kPowr(
+        global const float* inputMatrix, 
+        global float* resultMatrix,
+        float power) {
+    int id = get_global_id(0);
+    resultMatrix[id] = powr(inputMatrix[id], power);
 }

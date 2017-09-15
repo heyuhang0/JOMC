@@ -25,6 +25,12 @@ public class Matrix implements Cloneable {
     private static GMath gMath;
     private static boolean inited = false;
 
+    /*
+     * =================================================================
+     * >>>>>>>>>>>>>>>>>>>>>>>>>>>> 构造器 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+     * =================================================================
+     */
+    
     /**
      * 初始化OpenCl
      */
@@ -35,6 +41,7 @@ public class Matrix implements Cloneable {
             gMath = new GMath();
             queue = gMath.getQueue();
             context = gMath.getContext();
+            MatrixMath.init(gMath);
             inited = true;
         }
     }
@@ -159,6 +166,11 @@ public class Matrix implements Cloneable {
         return matrix;
     }
 
+    /*
+     * =================================================================
+     * >>>>>>>>>>>>>>>>>>>>>>>>>> 矩阵操作 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+     * =================================================================
+     */
     /**
      * 用随机数初始化矩阵
      * 
@@ -268,18 +280,6 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * 计算当前矩阵的sigmoid值
-     * 
-     * @param result
-     *            保存运算结果的矩阵
-     * @return 保存运算结果的矩阵
-     */
-    public Matrix sigmoid(Matrix result) {
-        gMath.sigmoid(this, result);
-        return result;
-    }
-
-    /**
      * 将矩阵的转置矩阵储存在新矩阵中
      * 
      * @param result
@@ -290,7 +290,7 @@ public class Matrix implements Cloneable {
         gMath.transpose(this, result);
         return result;
     }
-
+    
     /**
      * 将矩阵复制到新的矩阵中
      * 
@@ -567,6 +567,7 @@ public class Matrix implements Cloneable {
     protected void finalize() throws Throwable {
         super.finalize();
         this.release();
+        Tools.println("一个Matrix对象被回收");
     }
 
     /**
