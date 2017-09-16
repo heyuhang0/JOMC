@@ -355,7 +355,7 @@ class GMath {
         if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
                 && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
             kAcos.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kCos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+            queue.put1DRangeKernel(kAcos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
         } else {
             throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
         }
@@ -375,7 +375,7 @@ class GMath {
         if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
                 && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
             kAtan.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kTan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+            queue.put1DRangeKernel(kAtan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
         } else {
             throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
         }

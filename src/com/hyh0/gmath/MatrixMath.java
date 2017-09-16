@@ -348,6 +348,7 @@ public class MatrixMath {
      * @param result
      *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
+     * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
     public static Matrix abs(Matrix input) {
         Matrix result = new Matrix(input.getRowDimension(), input.getColumnDimension());
