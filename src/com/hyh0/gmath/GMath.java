@@ -30,6 +30,7 @@ class GMath {
     private CLKernel kScalarMultiply;
     private CLKernel kTranspose;
     private CLKernel kCopy;
+    private CLKernel kCopy2D;
     private CLKernel kArrayMultiply;
     private CLKernel kArrayDivide;
     private CLKernel kScalarDivide;
@@ -79,6 +80,7 @@ class GMath {
             kScalarMultiply = program.createCLKernel("matrixScalarMultiply");
             kTranspose = program.createCLKernel("transpose");
             kCopy = program.createCLKernel("copy");
+            kCopy2D = program.createCLKernel("copy2D");
             kArrayMultiply = program.createCLKernel("arrayMultiply");
             kArrayDivide = program.createCLKernel("arrayDivide");
             kScalarDivide = program.createCLKernel("scalarDivide");
@@ -142,6 +144,30 @@ class GMath {
             kCopy.setArg(1, newMatrix.getArg());
             queue.put1DRangeKernel(kCopy, 0, originalMatrix.getRowDimension() * originalMatrix.getColumnDimension(), 0);
         }
+    }
+    
+    /**
+     * 把矩阵的一个区域复制到另一个矩阵的一个区域
+     * @param originalMatrix 原矩阵
+     * @param startPointMO 原矩阵要复制的区域左上角的行坐标
+     * @param startPointNO 原矩阵要复制的区域左上角的列坐标
+     * @param newMatrix 新矩阵
+     * @param startPointMN 新矩阵要复制的区域左上角的行坐标
+     * @param startPointNN 新矩阵要复制的区域左上角的列坐标
+     * @param mLength 要复制的行数
+     * @param nLength 要复制的列数
+     */
+    public void copy(Matrix originalMatrix, int startPointMO, int startPointNO,
+            Matrix newMatrix, int startPointMN, int startPointNN, 
+            int mLength, int nLength) {
+        // TODO check arguments
+        kCopy2D.setArg(0, originalMatrix.getArg());
+        kCopy2D.setArg(1, newMatrix.getArg());
+        kCopy2D.setArg(2, originalMatrix.getColumnDimension());
+        kCopy2D.setArg(3, newMatrix.getColumnDimension());
+        kCopy2D.setArg(4, startPointMN - startPointMO);
+        kCopy2D.setArg(5, startPointNN - startPointNO);
+        queue.put2DRangeKernel(kCopy2D, startPointMO, startPointNO, mLength, nLength, 0, 0);
     }
     /**
      * 将两个矩阵相加并将结果保存在第三个矩阵中

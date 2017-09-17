@@ -773,6 +773,9 @@ public class Matrix implements Cloneable {
         return matrixBuffer;
     }
 
+    protected static GMath getGMath() {
+        return Matrix.gMath;
+    }
     @Override
     protected void finalize() throws Throwable {
         super.finalize();

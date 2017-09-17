@@ -39,6 +39,17 @@ kernel void copy(global const float* originalMatrix, global float* newMatrix) {
     newMatrix[id] = originalMatrix[id];
 }
 
+//copy a matrix
+kernel void copy2D(global const float* originalMatrix, global float* newMatrix,
+        const int originalMatrixN, const int newMatrixN,
+        const int offsetErrorM, const int offsetErrorN) {
+    int mIdO = get_global_id(0);
+    int nIdO = get_global_id(1);
+    int mIdN = mIdO + offsetErrorM;
+    int nIdN = nIdO + offsetErrorN;
+    newMatrix[mIdN * newMatrixN + nIdN] = originalMatrix[mIdO * originalMatrixN + nIdO];
+}
+
 // let mr = k * m
 kernel void matrixScalarMultiply(global const float* m, float k, global float* mr) {
     int iGID = get_global_id(0);

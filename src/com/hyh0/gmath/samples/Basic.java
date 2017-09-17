@@ -72,6 +72,12 @@ class Basic {
         System.out.println("1 ./ A = ");
         A.leftDivide(1, F).print(); // F = 1 ./ A
         
+        //矩阵复制操作
+        A.release();
+        B.release();
+        A = Matrix.random(4, 5);
+        B = new Matrix(4, 5);
+        
         Matrix.releaseAll(); // 释放OpenCl资源
     }
 
