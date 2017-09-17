@@ -5,13 +5,16 @@ import java.io.IOException;
 public class Tools {
     
     
-    final static boolean showMessages = false;
+    static boolean showMessages = false;
     public static void println(String message) {
         if(showMessages)
             System.out.println("$: " + message);
     }
     public static void println(Object o) {
         Tools.println(o.toString());
+    }
+    public static void setPrint(boolean openIt) {
+        showMessages = openIt;
     }
     
     static long[] timer = new long[10];

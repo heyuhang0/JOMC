@@ -1,3 +1,7 @@
+/*
+ * Matrix operate
+ */
+
 // let mr = m1 + m2
 kernel void matrixAdd(global const float* m1, global const float* m2, global float* mr) {
     int iGID = get_global_id(0);
@@ -111,15 +115,6 @@ kernel void matrixMultiplyN(
     }
 }
 
-// use sigmoid function to compute every element in inputMatrix
-// and save the result in result matrix
-kernel void sigmoid(
-        global const float* inputMatrix, 
-        global float* resultMatrix) {
-    int id = get_global_id(0);
-    resultMatrix[id] = 1.0f / (1.0f + half_exp(-inputMatrix[id]));
-}
-
 // compare two matrix
 // and save the number of elements that are differnt in result
 #define ERROR_ALLOWED 0.0000001f
@@ -128,6 +123,36 @@ kernel void compare(global const float* m1, global const float* m2, global int* 
     float error = m1[id] - m2[id];
     if(error > ERROR_ALLOWED || error < -ERROR_ALLOWED)
         atomic_inc(result);
+}
+
+// mr = m1 .* m2
+kernel void arrayMultiply(global const float* m1, global const float* m2, global float* mr) {
+    int iGID = get_global_id(0);
+    mr[iGID] = m1[iGID] * m2[iGID];
+}
+
+// mr = m1 ./ m2
+kernel void arrayDivide(global const float* m1, global const float* m2, global float* mr) {
+    int iGID = get_global_id(0);
+    mr[iGID] = m1[iGID] / m2[iGID];
+}
+
+// mr = k ./ m
+kernel void scalarDivide(float k, global const float* m, global float* mr) {
+    int iGID = get_global_id(0);
+    mr[iGID] = k / m[iGID];
+}
+/*
+ * Math functions
+ */
+
+//use sigmoid function to compute every element in inputMatrix
+//and save the result in result matrix
+kernel void sigmoid(
+     global const float* inputMatrix, 
+     global float* resultMatrix) {
+ int id = get_global_id(0);
+ resultMatrix[id] = 1.0f / (1.0f + half_exp(-inputMatrix[id]));
 }
 
 kernel void kAbs(

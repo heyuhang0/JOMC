@@ -30,7 +30,7 @@ public class Matrix implements Cloneable {
      * >>>>>>>>>>>>>>>>>>>>>>>>>>>> 构造器 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
      * =================================================================
      */
-    
+
     /**
      * 初始化OpenCl
      */
@@ -97,6 +97,10 @@ public class Matrix implements Cloneable {
         }
         int m = data.length;
         int n = data[0].length;
+        for (int i = 0; i < m; i++) {
+            if (data[i].length != n)
+                throw newIllegalArgumentException("二维数组的每一行长度应该相等");
+        }
         this.matrixBuffer = context.createFloatBuffer(m * n, READ_WRITE);
         this.M = m;
         this.N = n;
@@ -164,6 +168,17 @@ public class Matrix implements Cloneable {
         Matrix matrix = new Matrix(m, n);
         matrix.randomize(lowerLimit, upperLimit);
         return matrix;
+    }
+
+    /**
+     * 用二维数组创建一个矩阵
+     * 
+     * @param data
+     *            二维的double数组
+     * @return 新建的矩阵
+     */
+    public static Matrix constructWithCopy(double[][] data) {
+        return new Matrix(data);
     }
 
     /*
@@ -280,6 +295,136 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * result = B./this
+     * 
+     * @param B
+     *            另一个矩阵
+     * @param result
+     *            保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix arrayLeftDivide(Matrix B, Matrix result) {
+        B.arrayDivides(this, result);
+        return result;
+    }
+
+    /**
+     * this = B./this
+     * @param B 另一个矩阵
+     * @return 当前矩阵
+     */
+    public Matrix arrayLeftDivideEquals(Matrix B) {
+        return arrayLeftDivide(B, this);
+    }
+
+    /**
+     * result = this./B
+     * 
+     * @param B
+     *            另一个矩阵
+     * @param result
+     *            保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix arrayDivides(Matrix B, Matrix result) {
+        gMath.arrayDivides(this, B, result);
+        return result;
+    }
+
+    /**
+     * this = this./B 
+     * @param B 另一个矩阵
+     * @return 当前矩阵
+     */
+    public Matrix arrayDividesEquals(Matrix B) {
+        return arrayDivides(B, this);
+    }
+    
+    /**
+     * result = this./B
+     * 
+     * @param B
+     *            另一个矩阵
+     * @param result
+     *            保存结果的矩阵
+     * @return 保存结果的矩阵
+     * @deprecated 只是为了兼容JAMA,arrayDivides效果相同
+     */
+    public Matrix arrayRightDivide(Matrix B, Matrix result) {
+        return arrayDivides(B, result);
+    }
+
+    /**
+     * this = this./B 
+     * @param B 另一个矩阵
+     * @return 当前矩阵
+     * @deprecated 只是为了兼容JAMA,arrayDividesEquals效果相同
+     */
+    public Matrix arrayRightDivideEquals(Matrix B) {
+        return arrayDividesEquals(B);
+    }
+
+    /**
+     * 矩阵数乘 result = B.*this
+     * @param B 另一个矩阵
+     * @param result 保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix arrayTimes(Matrix B, Matrix result) {
+        gMath.arrayTimes(this, B, result);
+        return result;
+    }
+
+    /**
+     * 矩阵数乘 result = B.*this
+     * @param B 另一个矩阵
+     * @return 当前矩阵
+     */
+    public Matrix arrayTimesEquals(Matrix B) {
+        return arrayTimes(B, this);
+    }
+
+    /**
+     * 矩阵的每一个元素除一个常数 result = this/s
+     * @param s 除数
+     * @param result 保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix divides(double s, Matrix result) {
+        result = times(1/s, result);
+        return result;
+    }
+    
+    /**
+     * 矩阵的每一个元素除等于一个常数 result = this/s
+     * @param s 除数
+     * @param result 保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix dividesEquals(double s) {
+        return divides(s, this);
+    }
+    
+    /**
+     * result = k./this
+     * @param k 被除数
+     * @param result 保存结果的矩阵
+     * @return 保存结果的矩阵
+     */
+    public Matrix leftDivide(double k, Matrix result) {
+        gMath.scalarDivides(k, this, result);
+        return result;
+    }
+    
+    /**
+     * this = s./this
+     * @param s 被除数
+     * @return 当前矩阵
+     */
+    public Matrix leftDivideEquals(double s) {
+        return leftDivide(s, this);
+    }
+    /**
      * 将矩阵的转置矩阵储存在新矩阵中
      * 
      * @param result
@@ -290,7 +435,7 @@ public class Matrix implements Cloneable {
         gMath.transpose(this, result);
         return result;
     }
-    
+
     /**
      * 将矩阵复制到新的矩阵中
      * 
@@ -406,9 +551,20 @@ public class Matrix implements Cloneable {
         }
         return result;
     }
-    
+
+    /**
+     * 将矩阵的数据转换为二维数组
+     * 
+     * @return 与矩阵大小对应的二维数组
+     * @deprecated 只是为了兼容JAMA，这里得到的数组只是个数据拷贝
+     */
+    public double[][] getArray() {
+        return getArrayCopy();
+    }
+
     /**
      * 获取矩阵行数
+     * 
      * @return 矩阵的行数
      */
     public int getRowDimension() {
@@ -416,11 +572,44 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * Make a one-dimensional row packed copy of the internal array.
+     * 
+     * @return Matrix elements packed in a one-dimensional array by rows.
+     */
+    public double[] getRowPackedCopy() {
+        double[][] A = getArrayCopy();
+        double[] vals = new double[M * N];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                vals[i * N + j] = A[i][j];
+            }
+        }
+        return vals;
+    }
+
+    /**
      * 获取矩阵列数
+     * 
      * @return 矩阵的列数
      */
     public int getColumnDimension() {
         return N;
+    }
+
+    /**
+     * Make a one-dimensional column packed copy of the internal array.
+     * 
+     * @return Matrix elements packed in a one-dimensional array by columns.
+     */
+    public double[] getColumnPackedCopy() {
+        double[][] A = getArrayCopy();
+        double[] vals = new double[M * N];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                vals[i + j * M] = A[i][j];
+            }
+        }
+        return vals;
     }
 
     /**

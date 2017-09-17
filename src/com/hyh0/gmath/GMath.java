@@ -30,6 +30,10 @@ class GMath {
     private CLKernel kScalarMultiply;
     private CLKernel kTranspose;
     private CLKernel kCopy;
+    private CLKernel kArrayMultiply;
+    private CLKernel kArrayDivide;
+    private CLKernel kScalarDivide;
+    
     private CLKernel kAbs;
     private CLKernel kAcos;
     private CLKernel kAsin;
@@ -57,6 +61,7 @@ class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
+        // Tools.setPrint(true); // 打开debug输出
         context = CLContext.create();
         Tools.println(context);
         device = context.getMaxFlopsDevice();
@@ -70,12 +75,15 @@ class GMath {
             kRand = program.createCLKernel("rand");
             kMatrixMultiply = program.createCLKernel("matrixMultiply");
             kMatrixMultiplyN = program.createCLKernel("matrixMultiplyN");
-            kSigmoid = program.createCLKernel("sigmoid");
             kCompare = program.createCLKernel("compare");
             kScalarMultiply = program.createCLKernel("matrixScalarMultiply");
             kTranspose = program.createCLKernel("transpose");
             kCopy = program.createCLKernel("copy");
-            
+            kArrayMultiply = program.createCLKernel("arrayMultiply");
+            kArrayDivide = program.createCLKernel("arrayDivide");
+            kScalarDivide = program.createCLKernel("scalarDivide");
+
+            kSigmoid = program.createCLKernel("sigmoid");
             kAbs = program.createCLKernel("kAbs");
             kAcos = program.createCLKernel("kAcos");
             kAsin = program.createCLKernel("kAsin");
@@ -282,6 +290,45 @@ class GMath {
         }
     }
 
+    public void arrayTimes(Matrix m1, Matrix m2, Matrix mr) {
+        if (m1.getRowDimension() == m2.getRowDimension() 
+                && m1.getRowDimension() == mr.getRowDimension() 
+                && m1.getColumnDimension() == m2.getColumnDimension() 
+                && m1.getColumnDimension() == mr.getColumnDimension()) {
+            kArrayMultiply.setArg(0, m1.getArg());
+            kArrayMultiply.setArg(1, m2.getArg());
+            kArrayMultiply.setArg(2, mr.getArg());
+            queue.put1DRangeKernel(kArrayMultiply, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不同");
+        }
+    }
+    
+    public void arrayDivides(Matrix m1, Matrix m2, Matrix mr) {
+        if (m1.getRowDimension() == m2.getRowDimension() 
+                && m1.getRowDimension() == mr.getRowDimension() 
+                && m1.getColumnDimension() == m2.getColumnDimension() 
+                && m1.getColumnDimension() == mr.getColumnDimension()) {
+            kArrayDivide.setArg(0, m1.getArg());
+            kArrayDivide.setArg(1, m2.getArg());
+            kArrayDivide.setArg(2, mr.getArg());
+            queue.put1DRangeKernel(kArrayDivide, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不同");
+        }
+    }
+    
+    public void scalarDivides(double k, Matrix m, Matrix mr) {
+        if (m.getRowDimension() == mr.getRowDimension() 
+                && m.getColumnDimension() == mr.getColumnDimension()) {
+            kScalarDivide.setArg(0, (float)k);
+            kScalarDivide.setArg(1, m.getArg());
+            kScalarDivide.setArg(2, mr.getArg());
+            queue.put1DRangeKernel(kScalarDivide, 0, m.getRowDimension() * m.getColumnDimension(), 0);
+        } else {
+            throw newIllegalArgumentException("矩阵的大小不同");
+        }
+    }
     /**
      * 将输入矩阵中的值经过sigmoid函数计算后储存在结果矩阵中
      * 
@@ -319,11 +366,12 @@ class GMath {
                 && m1.getColumnDimension() == m2.getColumnDimension()) {
             if (!isEqualResultBufferInited) {
                 isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
+                isEqualResultBufferInited = true;
             }
             isEqualResultBuffer.getBuffer().position(0);
             isEqualResultBuffer.getBuffer().put(0);
             isEqualResultBuffer.getBuffer().position(0);
-            queue.putWriteBuffer(isEqualResultBuffer, true);
+            queue.putWriteBuffer(isEqualResultBuffer, false);
             kCompare.setArg(0, m1.getArg());
             kCompare.setArg(1, m2.getArg());
             kCompare.setArg(2, isEqualResultBuffer);
