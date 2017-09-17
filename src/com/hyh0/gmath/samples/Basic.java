@@ -61,6 +61,17 @@ class Basic {
         
         System.out.println("F is equal to F1, " + F.isEqualTo(F1)); //比较是否相等
         
+        System.out.println("A = ");
+        A.print();
+        System.out.println("B = ");
+        B.print();
+        System.out.println("A .* B = ");
+        A.arrayTimes(B, F).print(); // F = A .* B
+        System.out.println("A ./ B = ");
+        A.arrayDivides(B, F).print(); // F = A ./ B
+        System.out.println("1 ./ A = ");
+        A.leftDivide(1, F).print(); // F = 1 ./ A
+        
         Matrix.releaseAll(); // 释放OpenCl资源
     }
 
