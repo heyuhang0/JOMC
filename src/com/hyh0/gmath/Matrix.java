@@ -295,7 +295,7 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * result = B./this
+     * result = B . / this 使另一个矩阵被此矩阵点除
      * 
      * @param B
      *            另一个矩阵
@@ -309,8 +309,10 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * this = B./this
-     * @param B 另一个矩阵
+     * this = B . / this 使另一个矩阵被此矩阵点除,并把结果储存在此矩阵
+     * 
+     * @param B
+     *            另一个矩阵
      * @return 当前矩阵
      */
     public Matrix arrayLeftDivideEquals(Matrix B) {
@@ -318,7 +320,7 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * result = this./B
+     * result = this . / B 此矩阵点除另一个矩阵
      * 
      * @param B
      *            另一个矩阵
@@ -332,16 +334,18 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * this = this./B 
-     * @param B 另一个矩阵
+     * this = this . / B 此矩阵点除等于另一个矩阵
+     * 
+     * @param B
+     *            另一个矩阵
      * @return 当前矩阵
      */
     public Matrix arrayDividesEquals(Matrix B) {
         return arrayDivides(B, this);
     }
-    
+
     /**
-     * result = this./B
+     * result = this . / B 此矩阵点除另一个矩阵
      * 
      * @param B
      *            另一个矩阵
@@ -355,8 +359,10 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * this = this./B 
-     * @param B 另一个矩阵
+     * this = this . / B 此矩阵点除等于另一个矩阵
+     * 
+     * @param B
+     *            另一个矩阵
      * @return 当前矩阵
      * @deprecated 只是为了兼容JAMA,arrayDividesEquals效果相同
      */
@@ -365,9 +371,12 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * 矩阵数乘 result = B.*this
-     * @param B 另一个矩阵
-     * @param result 保存结果的矩阵
+     * 矩阵点乘 result = B . * this
+     * 
+     * @param B
+     *            另一个矩阵
+     * @param result
+     *            保存结果的矩阵
      * @return 保存结果的矩阵
      */
     public Matrix arrayTimes(Matrix B, Matrix result) {
@@ -376,8 +385,10 @@ public class Matrix implements Cloneable {
     }
 
     /**
-     * 矩阵数乘 result = B.*this
-     * @param B 另一个矩阵
+     * 矩阵点乘等于 this = B . * this
+     * 
+     * @param B
+     *            另一个矩阵
      * @return 当前矩阵
      */
     public Matrix arrayTimesEquals(Matrix B) {
@@ -386,44 +397,54 @@ public class Matrix implements Cloneable {
 
     /**
      * 矩阵的每一个元素除一个常数 result = this/s
-     * @param s 除数
-     * @param result 保存结果的矩阵
+     * 
+     * @param s
+     *            除数
+     * @param result
+     *            保存结果的矩阵
      * @return 保存结果的矩阵
      */
     public Matrix divides(double s, Matrix result) {
-        result = times(1/s, result);
+        result = times(1 / s, result);
         return result;
     }
-    
+
     /**
      * 矩阵的每一个元素除等于一个常数 result = this/s
-     * @param s 除数
-     * @param result 保存结果的矩阵
+     * 
+     * @param s
+     *            除数
      * @return 保存结果的矩阵
      */
     public Matrix dividesEquals(double s) {
         return divides(s, this);
     }
-    
+
     /**
-     * result = k./this
-     * @param k 被除数
-     * @param result 保存结果的矩阵
+     * 让矩阵的每个元素都被常数除 result = k . / this
+     * 
+     * @param k
+     *            被除数
+     * @param result
+     *            保存结果的矩阵
      * @return 保存结果的矩阵
      */
     public Matrix leftDivide(double k, Matrix result) {
         gMath.scalarDivides(k, this, result);
         return result;
     }
-    
+
     /**
-     * this = s./this
-     * @param s 被除数
+     * 让矩阵的每个元素都被常数除,且在原矩阵中保存运算结果 this = s . / this
+     * 
+     * @param s
+     *            被除数
      * @return 当前矩阵
      */
     public Matrix leftDivideEquals(double s) {
         return leftDivide(s, this);
     }
+
     /**
      * 将矩阵的转置矩阵储存在新矩阵中
      * 

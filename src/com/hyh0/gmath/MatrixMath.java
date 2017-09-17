@@ -315,6 +315,8 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
+     * @param power
+     *            指数
      * @param result
      *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
@@ -329,8 +331,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -345,8 +345,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -361,8 +359,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -377,8 +373,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -393,8 +387,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -409,8 +401,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -425,8 +415,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -441,8 +429,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -457,8 +443,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -473,8 +457,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -489,8 +471,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -505,8 +485,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -521,8 +499,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -537,8 +513,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -553,8 +527,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -569,8 +541,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -585,8 +555,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -601,8 +569,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -617,8 +583,6 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -633,8 +597,8 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
+     * @param power
+     *            指数
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
@@ -649,8 +613,8 @@ public class MatrixMath {
      * 
      * @param input
      *            输入矩阵
-     * @param result
-     *            保存运算结果的矩阵
+     * @param power
+     *            指数
      * @return 保存运算结果的矩阵
      * @deprecated 这样使用可能会导致显存泄露，应该把保存结果的矩阵传入方法
      */
