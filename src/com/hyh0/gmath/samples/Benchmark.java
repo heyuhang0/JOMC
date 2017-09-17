@@ -108,7 +108,14 @@ class Benchmark {
         System.out.println("分步求 3000*3000 的矩阵sigmoid用时: ");
         showTimer();
         System.out.println("结果是否正确: " + C.isEqualTo(C2));
-
+        System.out.println();
+        
+        resetTimer();
+        A.copyTo(C);
+        Matrix.finish();
+        System.out.println("复制一个 3000*3000 的矩阵用时: ");
+        showTimer();
+        
         Matrix.releaseAll();
     }
 
