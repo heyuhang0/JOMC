@@ -34,7 +34,7 @@ class GMath {
     private CLKernel kArrayMultiply;
     private CLKernel kArrayDivide;
     private CLKernel kScalarDivide;
-    
+
     private CLKernel kAbs;
     private CLKernel kAcos;
     private CLKernel kAsin;
@@ -57,7 +57,7 @@ class GMath {
     private CLKernel kPow2; // 以另一个数为底，另一个元素为指数
     private CLKernel kPown;
     private CLKernel kSigmoid;
-    
+
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
@@ -119,48 +119,69 @@ class GMath {
 
     /**
      * 转置矩阵
+     * 
      * @param 原矩阵
      * @param 储存结果的矩阵(不能与原矩阵相同)
      */
     public void transpose(Matrix m, Matrix result) {
         if (m.getRowDimension() != result.getColumnDimension() || m.getColumnDimension() != result.getRowDimension()) {
-            throw newIllegalArgumentException("矩阵大小不符合转制条件");
+            throw newIllegalArgumentException("矩阵大小不符合转制条件", m, result);
         } else if (m == result) {
-            throw newIllegalArgumentException("转置矩阵的原矩阵与结果矩阵不能相同");
+            throw newIllegalArgumentException("转置矩阵的原矩阵与结果矩阵不能相同", m, result);
         } else {
-            kTranspose.setArg(0,  m.getArg());
+            kTranspose.setArg(0, m.getArg());
             kTranspose.setArg(1, result.getArg());
             kTranspose.setArg(2, m.getRowDimension());
             kTranspose.setArg(3, m.getColumnDimension());
             queue.put2DRangeKernel(kTranspose, 0, 0, m.getRowDimension(), m.getColumnDimension(), 0, 0);
         }
     }
-    
+
     public void copy(Matrix originalMatrix, Matrix newMatrix) {
-        if (originalMatrix.getRowDimension() != newMatrix.getRowDimension() || originalMatrix.getColumnDimension() != newMatrix.getColumnDimension()) {
-            throw newIllegalArgumentException("矩阵大小不符");
-        } else {
-            kCopy.setArg(0, originalMatrix.getArg());
-            kCopy.setArg(1, newMatrix.getArg());
-            queue.put1DRangeKernel(kCopy, 0, originalMatrix.getRowDimension() * originalMatrix.getColumnDimension(), 0);
-        }
+        checkMatrix(originalMatrix, newMatrix);
+        kCopy.setArg(0, originalMatrix.getArg());
+        kCopy.setArg(1, newMatrix.getArg());
+        queue.put1DRangeKernel(kCopy, 0, originalMatrix.getRowDimension() * originalMatrix.getColumnDimension(), 0);
     }
-    
+
     /**
      * 把矩阵的一个区域复制到另一个矩阵的一个区域
-     * @param originalMatrix 原矩阵
-     * @param startPointMO 原矩阵要复制的区域左上角的行坐标
-     * @param startPointNO 原矩阵要复制的区域左上角的列坐标
-     * @param newMatrix 新矩阵
-     * @param startPointMN 新矩阵要复制的区域左上角的行坐标
-     * @param startPointNN 新矩阵要复制的区域左上角的列坐标
-     * @param mLength 要复制的行数
-     * @param nLength 要复制的列数
+     * 
+     * @param originalMatrix
+     *            原矩阵
+     * @param startPointMO
+     *            原矩阵要复制的区域左上角的行坐标
+     * @param startPointNO
+     *            原矩阵要复制的区域左上角的列坐标
+     * @param newMatrix
+     *            新矩阵
+     * @param startPointMN
+     *            新矩阵要复制的区域左上角的行坐标
+     * @param startPointNN
+     *            新矩阵要复制的区域左上角的列坐标
+     * @param mLength
+     *            要复制的行数
+     * @param nLength
+     *            要复制的列数
      */
-    public void copy(Matrix originalMatrix, int startPointMO, int startPointNO,
-            Matrix newMatrix, int startPointMN, int startPointNN, 
-            int mLength, int nLength) {
+    public void copy(Matrix originalMatrix, int startPointMO, int startPointNO, Matrix newMatrix, int startPointMN,
+            int startPointNN, int mLength, int nLength) {
         // TODO check arguments
+        if (startPointMO + mLength > originalMatrix.getRowDimension()
+                || startPointNO + nLength > originalMatrix.getColumnDimension()
+                || startPointMN + mLength > newMatrix.getRowDimension()
+                || startPointNN + nLength > newMatrix.getColumnDimension() || startPointMO < 0 || startPointNO < 0
+                || startPointMN < 0 || startPointNO < 0 || mLength <= 0 || nLength <= 0) {
+            this.release();
+            String message = "复制区域超出矩阵范围\n";
+            message += "原矩阵大小: " + originalMatrix.getRowDimension() + "*" + originalMatrix.getColumnDimension() + "\n";
+            message += "复制区域大小: (" + startPointMO + "," + startPointNO + ")(" + startPointMO + mLength + ","
+                    + startPointNO + nLength + ")\n";
+            message += "现矩阵大小: " + newMatrix.getRowDimension() + "*" + newMatrix.getColumnDimension() + "\n";
+            message += "粘贴区域大小: (" + startPointMN + "," + startPointNN + ")(" + startPointMN + mLength + ","
+                    + startPointNN + nLength + ")\n";
+            throw new IllegalArgumentException(message);
+        }
         kCopy2D.setArg(0, originalMatrix.getArg());
         kCopy2D.setArg(1, newMatrix.getArg());
         kCopy2D.setArg(2, originalMatrix.getColumnDimension());
@@ -171,6 +192,7 @@ class GMath {
         kCopy2D.setArg(7, startPointNO);
         queue.put2DRangeKernel(kCopy2D, 0, 0, mLength, nLength, 0, 0);
     }
+
     /**
      * 将两个矩阵相加并将结果保存在第三个矩阵中
      * 
@@ -182,19 +204,14 @@ class GMath {
      *            保存结果的矩阵
      */
     public void add(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.getRowDimension() == m2.getRowDimension() 
-                && m1.getRowDimension() == mr.getRowDimension() 
-                && m1.getColumnDimension() == m2.getColumnDimension() 
-                && m1.getColumnDimension() == mr.getColumnDimension()) {
-            kMatrixAdd.setArg(0, m1.getArg());
-            kMatrixAdd.setArg(1, m2.getArg());
-            kMatrixAdd.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kMatrixAdd, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同,无法相加");
-        }
+        checkMatrix(m1, m2);
+        checkMatrix(m2, mr);
+        kMatrixAdd.setArg(0, m1.getArg());
+        kMatrixAdd.setArg(1, m2.getArg());
+        kMatrixAdd.setArg(2, mr.getArg());
+        queue.put1DRangeKernel(kMatrixAdd, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
     }
-    
+
     /**
      * 将两个矩阵相减并将结果保存在第三个矩阵中
      * 
@@ -206,36 +223,32 @@ class GMath {
      *            保存结果的矩阵
      */
     public void substract(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.getRowDimension() == m2.getRowDimension() 
-                && m1.getRowDimension() == mr.getRowDimension() 
-                && m1.getColumnDimension() == m2.getColumnDimension() 
-                && m1.getColumnDimension() == mr.getColumnDimension()) {
-            kMatrixSubtract.setArg(0, m1.getArg());
-            kMatrixSubtract.setArg(1, m2.getArg());
-            kMatrixSubtract.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kMatrixSubtract, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同,无法相减");
-        }
+        checkMatrix(m1, m2);
+        checkMatrix(m2, mr);
+        kMatrixSubtract.setArg(0, m1.getArg());
+        kMatrixSubtract.setArg(1, m2.getArg());
+        kMatrixSubtract.setArg(2, mr.getArg());
+        queue.put1DRangeKernel(kMatrixSubtract, 0, m1.getRowDimension() * m1.getColumnDimension(), 0); // 执行内核
     }
 
     /**
      * 矩阵数乘
-     * @param m 被数乘的矩阵
-     * @param k 常数项
-     * @param result 储存结果的矩阵
+     * 
+     * @param m
+     *            被数乘的矩阵
+     * @param k
+     *            常数项
+     * @param result
+     *            储存结果的矩阵
      */
     public void multiply(Matrix m, double k, Matrix result) {
-        if(m.getRowDimension() == result.getRowDimension() 
-                && m.getColumnDimension() == result.getColumnDimension()) {
-            kScalarMultiply.setArg(0, m.getArg());
-            kScalarMultiply.setArg(1, (float)k);
-            kScalarMultiply.setArg(2, result.getArg());
-            queue.put1DRangeKernel(kScalarMultiply, 0, m.getRowDimension() * m.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同,无法保存结果");
-        }
+        checkMatrix(m, result);
+        kScalarMultiply.setArg(0, m.getArg());
+        kScalarMultiply.setArg(1, (float) k);
+        kScalarMultiply.setArg(2, result.getArg());
+        queue.put1DRangeKernel(kScalarMultiply, 0, m.getRowDimension() * m.getColumnDimension(), 0);
     }
+
     /**
      * 用均匀随机数初始化矩阵
      * 
@@ -268,8 +281,7 @@ class GMath {
     public void multiply(Matrix m1, Matrix m2, Matrix mr) {
         final int MULTIPLY_WORK_ITEM_M = 8;
         final int MULTIPLY_WORK_ITEM_N = 8;
-        if (m1.getRowDimension() == mr.getRowDimension() 
-                && m1.getColumnDimension() == m2.getRowDimension() 
+        if (m1.getRowDimension() == mr.getRowDimension() && m1.getColumnDimension() == m2.getRowDimension()
                 && m2.getColumnDimension() == mr.getColumnDimension()) {
 
             int globalWorkSizeM = m1.getRowDimension() / MULTIPLY_WORK_ITEM_M; // 向下取整
@@ -288,8 +300,8 @@ class GMath {
                 kMatrixMultiplyN.setArg(3, m1.getRowDimension());
                 kMatrixMultiplyN.setArg(4, m1.getColumnDimension());
                 kMatrixMultiplyN.setArg(5, m2.getRowDimension());
-                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N,
-                        0, 0);
+                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M,
+                        m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N, 0, 0);
             }
 
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
@@ -299,7 +311,8 @@ class GMath {
                 kMatrixMultiply.setArg(3, m1.getRowDimension());
                 kMatrixMultiply.setArg(4, m1.getColumnDimension());
                 kMatrixMultiply.setArg(5, m2.getColumnDimension());
-                queue.put2DRangeKernel(kMatrixMultiply, offsetM, 0, globalWorkSizeReamainM, m2.getColumnDimension(), 0, 0);
+                queue.put2DRangeKernel(kMatrixMultiply, offsetM, 0, globalWorkSizeReamainM, m2.getColumnDimension(), 0,
+                        0);
             }
 
             if (m2.getColumnDimension() % MULTIPLY_WORK_ITEM_N != 0 && m1.getRowDimension() > globalWorkSizeReamainM) {
@@ -314,49 +327,36 @@ class GMath {
             }
 
         } else {
-            throw newIllegalArgumentException("矩阵的大小不符合相乘的条件");
+            throw newIllegalArgumentException("矩阵的大小不符合相乘的条件", m1, m2, mr);
         }
     }
 
     public void arrayTimes(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.getRowDimension() == m2.getRowDimension() 
-                && m1.getRowDimension() == mr.getRowDimension() 
-                && m1.getColumnDimension() == m2.getColumnDimension() 
-                && m1.getColumnDimension() == mr.getColumnDimension()) {
-            kArrayMultiply.setArg(0, m1.getArg());
-            kArrayMultiply.setArg(1, m2.getArg());
-            kArrayMultiply.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kArrayMultiply, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同");
-        }
+        checkMatrix(m1, m2);
+        checkMatrix(m1, mr);
+        kArrayMultiply.setArg(0, m1.getArg());
+        kArrayMultiply.setArg(1, m2.getArg());
+        kArrayMultiply.setArg(2, mr.getArg());
+        queue.put1DRangeKernel(kArrayMultiply, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
     }
-    
+
     public void arrayDivides(Matrix m1, Matrix m2, Matrix mr) {
-        if (m1.getRowDimension() == m2.getRowDimension() 
-                && m1.getRowDimension() == mr.getRowDimension() 
-                && m1.getColumnDimension() == m2.getColumnDimension() 
-                && m1.getColumnDimension() == mr.getColumnDimension()) {
-            kArrayDivide.setArg(0, m1.getArg());
-            kArrayDivide.setArg(1, m2.getArg());
-            kArrayDivide.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kArrayDivide, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同");
-        }
+        checkMatrix(m1, m2);
+        checkMatrix(m1, mr);
+        kArrayDivide.setArg(0, m1.getArg());
+        kArrayDivide.setArg(1, m2.getArg());
+        kArrayDivide.setArg(2, mr.getArg());
+        queue.put1DRangeKernel(kArrayDivide, 0, m1.getRowDimension() * m1.getColumnDimension(), 0);
     }
-    
+
     public void scalarDivides(double k, Matrix m, Matrix mr) {
-        if (m.getRowDimension() == mr.getRowDimension() 
-                && m.getColumnDimension() == mr.getColumnDimension()) {
-            kScalarDivide.setArg(0, (float)k);
-            kScalarDivide.setArg(1, m.getArg());
-            kScalarDivide.setArg(2, mr.getArg());
-            queue.put1DRangeKernel(kScalarDivide, 0, m.getRowDimension() * m.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不同");
-        }
+        checkMatrix(m, mr);
+        kScalarDivide.setArg(0, (float) k);
+        kScalarDivide.setArg(1, m.getArg());
+        kScalarDivide.setArg(2, mr.getArg());
+        queue.put1DRangeKernel(kScalarDivide, 0, m.getRowDimension() * m.getColumnDimension(), 0);
     }
+
     /**
      * 将输入矩阵中的值经过sigmoid函数计算后储存在结果矩阵中
      * 
@@ -366,15 +366,10 @@ class GMath {
      *            结果矩阵
      */
     public void sigmoid(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kSigmoid.setArg(0, inputMatrix.getArg());
-            kSigmoid.setArg(1, resultMatrix.getArg());
-
-            queue.put1DRangeKernel(kSigmoid, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kSigmoid.setArg(0, inputMatrix.getArg());
+        kSigmoid.setArg(1, resultMatrix.getArg());
+        queue.put1DRangeKernel(kSigmoid, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
 
     private CLBuffer<IntBuffer> isEqualResultBuffer;
@@ -390,245 +385,162 @@ class GMath {
      * @return 如果矩阵相等返回true
      */
     public boolean compare(Matrix m1, Matrix m2) {
-        if (m1.getRowDimension() == m2.getRowDimension() 
-                && m1.getColumnDimension() == m2.getColumnDimension()) {
-            if (!isEqualResultBufferInited) {
-                isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
-                isEqualResultBufferInited = true;
-            }
-            isEqualResultBuffer.getBuffer().position(0);
-            isEqualResultBuffer.getBuffer().put(0);
-            isEqualResultBuffer.getBuffer().position(0);
-            queue.putWriteBuffer(isEqualResultBuffer, false);
-            kCompare.setArg(0, m1.getArg());
-            kCompare.setArg(1, m2.getArg());
-            kCompare.setArg(2, isEqualResultBuffer);
-            queue.put1DRangeKernel(kCompare, 0, m1.getRowDimension() * m2.getColumnDimension(), 0);
-            queue.putReadBuffer(isEqualResultBuffer, true);
-
-            if (isEqualResultBuffer.getBuffer().get(0) > 0)
-                return false;
-            else
-                return true;
-        } else {
-            throw newIllegalArgumentException("矩阵的大小不符,无法比较");
+        checkMatrix(m1, m2);
+        if (!isEqualResultBufferInited) {
+            isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
+            isEqualResultBufferInited = true;
         }
+        isEqualResultBuffer.getBuffer().position(0);
+        isEqualResultBuffer.getBuffer().put(0);
+        isEqualResultBuffer.getBuffer().position(0);
+        queue.putWriteBuffer(isEqualResultBuffer, false);
+        kCompare.setArg(0, m1.getArg());
+        kCompare.setArg(1, m2.getArg());
+        kCompare.setArg(2, isEqualResultBuffer);
+        queue.put1DRangeKernel(kCompare, 0, m1.getRowDimension() * m2.getColumnDimension(), 0);
+        queue.putReadBuffer(isEqualResultBuffer, true);
+
+        if (isEqualResultBuffer.getBuffer().get(0) > 0)
+            return false;
+        else
+            return true;
     }
-    
-    public void abs(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kAbs.setArg(0, inputMatrix.getArg());
-            kAbs.setArg(1, resultMatrix.getArg());
 
-            queue.put1DRangeKernel(kAbs, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+    public void abs(Matrix inputMatrix, Matrix resultMatrix) {
+        checkMatrix(inputMatrix, resultMatrix);
+        kAbs.setArg(0, inputMatrix.getArg());
+        kAbs.setArg(1, resultMatrix.getArg());
+        queue.put1DRangeKernel(kAbs, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+
     }
 
     public void acos(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kAcos.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kAcos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kAcos.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kAcos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+
     }
-    
+
     public void asin(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kAsin.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kAsin, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kAsin.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kAsin, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+
     }
-    
+
     public void atan(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kAtan.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kAtan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kAtan.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kAtan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void cos(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kCos.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kCos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kCos.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kCos, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+
     }
-    
+
     public void sin(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kSin.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kSin, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kSin.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kSin, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
+
     }
-    
+
     public void tan(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kTan.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kTan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kTan.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kTan, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void cosh(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kCosh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kCosh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kCosh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kCosh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void sinh(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kSinh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kSinh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kSinh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kSinh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void tanh(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kTanh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kTanh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kTanh.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kTanh, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void log(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kLog.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kLog, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kLog.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kLog, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void log2(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kLog2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kLog2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kLog2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kLog2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void log10(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kLog10.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kLog10, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kLog10.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kLog10, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void exp(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kExp.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kExp, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kExp.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kExp, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void exp2(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kExp2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kExp2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kExp2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kExp2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void exp10(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kExp10.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kExp10, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kExp10.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kExp10, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void sqrt(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kSqrt.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kSqrt, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kSqrt.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kSqrt, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void rsqrt(Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kRsqrt.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            queue.put1DRangeKernel(kRsqrt, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kRsqrt.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        queue.put1DRangeKernel(kRsqrt, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void pow(Matrix inputMatrix, double power, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kPow.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            kPow.setArg(2, (float)power);
-            queue.put1DRangeKernel(kPow, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kPow.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        kPow.setArg(2, (float) power);
+        queue.put1DRangeKernel(kPow, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void pow(double power, Matrix inputMatrix, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kPow2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            kPow2.setArg(2, (float)power);
-            queue.put1DRangeKernel(kPow2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kPow2.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        kPow2.setArg(2, (float) power);
+        queue.put1DRangeKernel(kPow2, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
-    
+
     public void pow(Matrix inputMatrix, int power, Matrix resultMatrix) {
-        if (inputMatrix.getRowDimension() == resultMatrix.getRowDimension() 
-                && inputMatrix.getColumnDimension() == resultMatrix.getColumnDimension()) {
-            kPown.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
-            kPown.setArg(2, power);
-            queue.put1DRangeKernel(kPown, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
-        } else {
-            throw newIllegalArgumentException("输入矩阵与输出矩阵大小不同");
-        }
+        checkMatrix(inputMatrix, resultMatrix);
+        kPown.setArgs(inputMatrix.getArg(), resultMatrix.getArg());
+        kPown.setArg(2, power);
+        queue.put1DRangeKernel(kPown, 0, inputMatrix.getRowDimension() * inputMatrix.getColumnDimension(), 0);
     }
+
     /**
      * 等待队列中计算全部完成
      */
@@ -639,11 +551,11 @@ class GMath {
     public CLCommandQueue getQueue() {
         return this.queue;
     }
-    
+
     public CLContext getContext() {
         return this.context;
     }
-    
+
     @Override
     protected void finalize() {
         this.release();
@@ -658,14 +570,39 @@ class GMath {
     }
 
     /**
+     * 检查两个矩阵是否大小相等,如果不想等直接抛出异常
+     * 
+     * @param A
+     *            矩阵A
+     * @param B
+     *            矩阵B
+     * @throws IllegalArgumentException
+     */
+    private void checkMatrix(Matrix A, Matrix B) throws IllegalArgumentException {
+        if (A.getRowDimension() != B.getRowDimension() || A.getColumnDimension() != B.getColumnDimension()) {
+            String message = "两矩阵大小不相等， 不满足条件\n";
+            message += "matrix A: " + A.getRowDimension() + "*" + A.getColumnDimension() + "\n";
+            message += "matrix B: " + B.getRowDimension() + "*" + B.getColumnDimension();
+            this.release();
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
      * 创建不合法参数异常，同时释放资源
      * 
      * @param message
      *            包含的信息
      * @return IllegalArgument 异常
      */
-    private IllegalArgumentException newIllegalArgumentException(String message) {
+    private IllegalArgumentException newIllegalArgumentException(String message, Matrix... matrixs) {
         this.release();
+        message += "\n";
+        int index = 1;
+        for (Matrix e : matrixs) {
+            message += "matrix" + index + ": " + e.getRowDimension() + "*" + e.getColumnDimension() + "\n";
+            index ++;
+        }
         return new IllegalArgumentException(message);
     }
 }

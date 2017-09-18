@@ -36,7 +36,7 @@ public class Matrix implements Cloneable {
      */
     public static void init() {
         if (inited) {
-            throw newIllegalArgumentException("Matrix已经初始化过了");
+            return;
         } else {
             gMath = new GMath();
             queue = gMath.getQueue();
