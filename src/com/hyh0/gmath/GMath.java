@@ -167,7 +167,9 @@ class GMath {
         kCopy2D.setArg(3, newMatrix.getColumnDimension());
         kCopy2D.setArg(4, startPointMN - startPointMO);
         kCopy2D.setArg(5, startPointNN - startPointNO);
-        queue.put2DRangeKernel(kCopy2D, startPointMO, startPointNO, mLength, nLength, 0, 0);
+        kCopy2D.setArg(6, startPointMO);
+        kCopy2D.setArg(7, startPointNO);
+        queue.put2DRangeKernel(kCopy2D, 0, 0, mLength, nLength, 0, 0);
     }
     /**
      * 将两个矩阵相加并将结果保存在第三个矩阵中

@@ -470,6 +470,31 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * 把矩阵的一个区域的数据复制到另一个矩阵的一个区域
+     * 
+     * @param mStart
+     *            数据复制的起始行
+     * @param nStart
+     *            数据复制的起始列
+     * @param newMatrix
+     *            目标矩阵
+     * @param mStartOfNew
+     *            数据在目标矩阵中的起始行
+     * @param nStartOfNew
+     *            数据在目标矩阵中的起始列
+     * @param numOfRows
+     *            要复制的行数
+     * @param numOFColumns
+     *            要复制的列数
+     * @return 目标矩阵
+     */
+    public Matrix copyTo(int mStart, int nStart, Matrix newMatrix, int mStartOfNew, int nStartOfNew, int numOfRows,
+            int numOFColumns) {
+        gMath.copy(this, mStart, nStart, newMatrix, mStartOfNew, nStartOfNew, numOfRows, numOFColumns);
+        return newMatrix;
+    }
+
+    /**
      * 获得当前矩阵的拷贝(deep clone)
      * 
      * @return 复制产生的新矩阵
@@ -634,6 +659,220 @@ public class Matrix implements Cloneable {
     }
 
     /**
+     * Get a submatrix.
+     * 
+     * @param i0
+     *            Initial row index
+     * @param i1
+     *            Final row index
+     * @param j0
+     *            Initial column index
+     * @param j1
+     *            Final column index
+     * @return A(i0:i1,j0:j1)
+     */
+
+    public Matrix getMatrix(int i0, int i1, int j0, int j1) {
+        Matrix B = new Matrix(i1 - i0 + 1, j1 - j0 + 1);
+        this.copyTo(i0, j0, B, 0, 0, i1 - i0 + 1, j1 - j0 + 1);
+        return B;
+    }
+
+    /**
+     * Get a submatrix.(There is no optimization for openCl)
+     * 
+     * @param r
+     *            Array of row indices.
+     * @param c
+     *            Array of column indices.
+     * @return A(r(:),c(:))
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public Matrix getMatrix(int[] r, int[] c) {
+        double[][] A = this.getArrayCopy();
+        double[][] B = new double[r.length][c.length];
+        try {
+            for (int i = 0; i < r.length; i++) {
+                for (int j = 0; j < c.length; j++) {
+                    B[i][j] = A[r[i]][c[j]];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        return new Matrix(B);
+    }
+
+    /**
+     * Get a submatrix.(There is no optimization for openCl)
+     * 
+     * @param i0
+     *            Initial row index
+     * @param i1
+     *            Final row index
+     * @param c
+     *            Array of column indices.
+     * @return A(i0:i1,c(:))
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public Matrix getMatrix(int i0, int i1, int[] c) {
+        double[][] A = this.getArrayCopy();
+        double[][] B = new double[i1 - i0 + 1][c.length];
+        try {
+            for (int i = i0; i <= i1; i++) {
+                for (int j = 0; j < c.length; j++) {
+                    B[i - i0][j] = A[i][c[j]];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        return new Matrix(B);
+    }
+
+    /**
+     * Get a submatrix.(There is no optimization for openCl)
+     * 
+     * @param r
+     *            Array of row indices.
+     * @param j0
+     *            Initial column index
+     * @param j1
+     *            Final column index
+     * @return A(r(:),j0:j1)
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public Matrix getMatrix(int[] r, int j0, int j1) {
+        double[][] A = this.getArrayCopy();
+        double[][] B = new double[r.length][j1 - j0 + 1];
+        try {
+            for (int i = 0; i < r.length; i++) {
+                for (int j = j0; j <= j1; j++) {
+                    B[i][j - j0] = A[r[i]][j];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        return new Matrix(B);
+    }
+
+    /**
+     * Set a submatrix.
+     * 
+     * @param i0
+     *            Initial row index
+     * @param i1
+     *            Final row index
+     * @param j0
+     *            Initial column index
+     * @param j1
+     *            Final column index
+     * @param X
+     *            A(i0:i1,j0:j1)
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public void setMatrix(int i0, int i1, int j0, int j1, Matrix X) {
+        X.copyTo(0, 0, this, i0, j0, i1 - i0 + 1, j1 - j0 + 1);
+    }
+
+    /**
+     * Set a submatrix.(There is no optimization for openCl)
+     * 
+     * @param r
+     *            Array of row indices.
+     * @param c
+     *            Array of column indices.
+     * @param X
+     *            A(r(:),c(:))
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public void setMatrix(int[] r, int[] c, Matrix X) {
+        double[][] A = this.getArrayCopy();
+        double[][] XA = X.getArrayCopy();
+        try {
+            for (int i = 0; i < r.length; i++) {
+                for (int j = 0; j < c.length; j++) {
+                    A[r[i]][c[j]] = XA[i][j];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        this.set(A);
+    }
+
+    /**
+     * Set a submatrix.(There is no optimization for openCl)
+     * 
+     * @param r
+     *            Array of row indices.
+     * @param j0
+     *            Initial column index
+     * @param j1
+     *            Final column index
+     * @param X
+     *            A(r(:),j0:j1)
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public void setMatrix(int[] r, int j0, int j1, Matrix X) {
+        double[][] A = this.getArrayCopy();
+        double[][] XA = X.getArrayCopy();
+        try {
+            for (int i = 0; i < r.length; i++) {
+                for (int j = j0; j <= j1; j++) {
+                    A[r[i]][j] = XA[i][j - j0];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        this.set(A);
+    }
+
+    /**
+     * Set a submatrix.(There is no optimization for openCl)
+     * 
+     * @param i0
+     *            Initial row index
+     * @param i1
+     *            Final row index
+     * @param c
+     *            Array of column indices.
+     * @param X
+     *            A(i0:i1,c(:))
+     * @exception ArrayIndexOutOfBoundsException
+     *                Submatrix indices
+     */
+
+    public void setMatrix(int i0, int i1, int[] c, Matrix X) {
+        double[][] A = this.getArrayCopy();
+        double[][] XA = X.getArrayCopy();
+        try {
+            for (int i = i0; i <= i1; i++) {
+                for (int j = 0; j < c.length; j++) {
+                    A[i][c[j]] = XA[i - i0][j];
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ArrayIndexOutOfBoundsException("Submatrix indices");
+        }
+        this.set(A);
+    }
+
+    /**
      * Print the matrix to the output stream. Line the elements up in columns. Use
      * the format object, and right justify within columns of width characters. Note
      * that is the matrix is to be read back in, you probably will want to use a
@@ -776,6 +1015,7 @@ public class Matrix implements Cloneable {
     protected static GMath getGMath() {
         return Matrix.gMath;
     }
+
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
@@ -789,7 +1029,7 @@ public class Matrix implements Cloneable {
     private void syncToDevice() {
         matrixBuffer.getBuffer().position(0);
         queue.putWriteBuffer(matrixBuffer, true);
-    }
+     }
 
     /**
      * 将数据从设备端同步到主机端
