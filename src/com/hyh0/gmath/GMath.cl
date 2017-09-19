@@ -10,8 +10,8 @@ kernel void matrixAdd(global const float* m1, global const float* m2, global flo
 
 // let mr = m1 - m2
 kernel void matrixSubtract(global const float* m1, global const float* m2, global float* mr) {
- int iGID = get_global_id(0);
- mr[iGID] = m1[iGID] - m2[iGID];
+    int iGID = get_global_id(0);
+    mr[iGID] = m1[iGID] - m2[iGID];
 }
 
 // fill matrix with random number (now it is a test code for temporary use)
@@ -90,7 +90,12 @@ kernel void matrixMultiplyN(
         global const float* m1,
         global const float* m2,
         global float* mr,
-        int M, int N, int P) {
+        int M, int N, int P, 
+        int maxMId, int maxNId) {
+    if (get_global_id(0) >= maxMId)
+        return;
+    if (get_global_id(1) >= maxNId)
+        return;
     int mID = get_global_id(0) * WORK_ITEM_M;
     int nID = get_global_id(1) * WORK_ITEM_N;
     

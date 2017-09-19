@@ -62,12 +62,16 @@ class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
-        // Tools.setPrint(true); // 打开debug输出
+        Tools.setPrint(true); // 打开debug输出
         context = CLContext.create();
         Tools.println(context);
         device = context.getMaxFlopsDevice();
+        // device = context.getMaxFlopsDevice(CLDevice.Type.CPU); // force to use CPU
         Tools.println(device);
         queue = device.createCommandQueue();
+        Tools.println("Preferred Float Vector Width: " + device.getPreferredFloatVectorWidth());
+        Tools.println("Max Work Group Size: " + device.getMaxWorkGroupSize());
+        Tools.println("The number of CUs: " + device.getMaxComputeUnits());
         try {
             program = context.createProgram(GMath.class.getResourceAsStream("GMath.cl")).build();
             Tools.println(program.getBuildLog());
@@ -294,14 +298,20 @@ class GMath {
             int globalWorkSizeReamainN = m2.getColumnDimension() - offsetN;
 
             if (globalWorkSizeM != 0 && globalWorkSizeN != 0) {
+                // final int localWorkSize = (int)Math.sqrt(device.getMaxComputeUnits()); // 未经验证这样是否能获得最优解
+                final int localWorkSize = 4;
                 kMatrixMultiplyN.setArg(0, m1.getArg());
                 kMatrixMultiplyN.setArg(1, m2.getArg());
                 kMatrixMultiplyN.setArg(2, mr.getArg());
                 kMatrixMultiplyN.setArg(3, m1.getRowDimension());
                 kMatrixMultiplyN.setArg(4, m1.getColumnDimension());
                 kMatrixMultiplyN.setArg(5, m2.getRowDimension());
-                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M,
-                        m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N, 0, 0);
+                kMatrixMultiplyN.setArg(6, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M);
+                kMatrixMultiplyN.setArg(7, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N);
+                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
+                        roundUp(localWorkSize, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M),
+                        roundUp(localWorkSize, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N),
+                        localWorkSize, localWorkSize);
             }
 
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
@@ -331,6 +341,17 @@ class GMath {
         }
     }
 
+    private static int roundUp(int groupSize, int globalSize) {
+        if (groupSize <= 0)
+            return globalSize;
+        int r = globalSize % groupSize;
+        if (r == 0) {
+            return globalSize;
+        } else {
+            return globalSize + groupSize - r;
+        }
+    }
+    
     public void arrayTimes(Matrix m1, Matrix m2, Matrix mr) {
         checkMatrix(m1, m2);
         checkMatrix(m1, mr);

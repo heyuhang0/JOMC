@@ -1065,6 +1065,7 @@ public class Matrix implements Cloneable {
      * 释放显存空间
      */
     public void release() {
+        // matrixBuffer.getBuffer().clear();
         matrixBuffer.release();
     }
 
