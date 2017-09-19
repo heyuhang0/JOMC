@@ -1,8 +1,11 @@
 package com.hyh0.gmath;
 
-import java.io.IOException;
+import static com.jogamp.opencl.CLMemory.Mem.READ_WRITE;
 
+import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import com.hyh0.gmath.debug.Tools;
 
@@ -58,6 +61,10 @@ class GMath {
     private CLKernel kPown;
     private CLKernel kSigmoid;
 
+
+    private final int MULTIPLY_WORK_ITEM_M = 8; // 矩阵乘法每个工作项处理的矩阵行数(需要与cl中的大小对应)
+    private final int MULTIPLY_WORK_ITEM_N = 8; // 矩阵乘法每个工作项处理的矩阵列数(需要与cl中的大小对应)
+    private int preferredWorkGroupSizeForMultiplication; // 对于矩阵乘法的最优工作组大小
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
@@ -118,7 +125,43 @@ class GMath {
             this.release();
             throw e;
         }
+        preferredWorkGroupSizeForMultiplication = getPreferredLocalGroupSizeForMultiplication();
+    }
 
+    private int getPreferredLocalGroupSizeForMultiplication() {
+        Tools.println("start to search the best work group size for matrix multiplication");
+        final int sizeOfTestMatrix = 129 * 8;
+        CLBuffer<FloatBuffer> A = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
+        CLBuffer<FloatBuffer> B = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
+        CLBuffer<FloatBuffer> C = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
+
+        kMatrixMultiplyN.setArg(0, A);
+        kMatrixMultiplyN.setArg(1, B);
+        kMatrixMultiplyN.setArg(2, C);
+        kMatrixMultiplyN.setArg(3, sizeOfTestMatrix);
+        kMatrixMultiplyN.setArg(4, sizeOfTestMatrix);
+        kMatrixMultiplyN.setArg(5, sizeOfTestMatrix);
+        kMatrixMultiplyN.setArg(6, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M);
+        kMatrixMultiplyN.setArg(7, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N);
+        
+        long time;
+        long lastTime = Long.MAX_VALUE;
+        for (int i = 1; i * i <= device.getMaxWorkGroupSize(); i++) {
+            time = System.nanoTime();
+            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
+                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M),
+                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N),
+                    i, i);
+            queue.finish();
+            time = System.nanoTime() - time;
+            if (time > lastTime) {
+                Tools.println("the best size is: " + (i - 1));
+                return i - 1;
+            }
+            else
+                lastTime = time;
+        }
+        return (int)Math.sqrt(device.getMaxWorkGroupSize());
     }
 
     /**
@@ -272,6 +315,7 @@ class GMath {
         queue.put1DRangeKernel(kRand, 0, matrix.getRowDimension() * matrix.getColumnDimension(), 0);
     }
 
+
     /**
      * 将两个矩阵相乘并将结果保存在第三个矩阵中
      * 
@@ -283,8 +327,6 @@ class GMath {
      *            保存结果的矩阵
      */
     public void multiply(Matrix m1, Matrix m2, Matrix mr) {
-        final int MULTIPLY_WORK_ITEM_M = 8;
-        final int MULTIPLY_WORK_ITEM_N = 8;
         if (m1.getRowDimension() == mr.getRowDimension() && m1.getColumnDimension() == m2.getRowDimension()
                 && m2.getColumnDimension() == mr.getColumnDimension()) {
 
@@ -298,8 +340,7 @@ class GMath {
             int globalWorkSizeReamainN = m2.getColumnDimension() - offsetN;
 
             if (globalWorkSizeM != 0 && globalWorkSizeN != 0) {
-                // final int localWorkSize = (int)Math.sqrt(device.getMaxComputeUnits()); // 未经验证这样是否能获得最优解
-                final int localWorkSize = 4;
+                final int localWorkSize = this.preferredWorkGroupSizeForMultiplication;
                 kMatrixMultiplyN.setArg(0, m1.getArg());
                 kMatrixMultiplyN.setArg(1, m2.getArg());
                 kMatrixMultiplyN.setArg(2, mr.getArg());
@@ -310,8 +351,8 @@ class GMath {
                 kMatrixMultiplyN.setArg(7, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N);
                 queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
                         roundUp(localWorkSize, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M),
-                        roundUp(localWorkSize, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N),
-                        localWorkSize, localWorkSize);
+                        roundUp(localWorkSize, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N), localWorkSize,
+                        localWorkSize);
             }
 
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
@@ -351,7 +392,7 @@ class GMath {
             return globalSize + groupSize - r;
         }
     }
-    
+
     public void arrayTimes(Matrix m1, Matrix m2, Matrix mr) {
         checkMatrix(m1, m2);
         checkMatrix(m1, mr);
@@ -622,7 +663,7 @@ class GMath {
         int index = 1;
         for (Matrix e : matrixs) {
             message += "matrix" + index + ": " + e.getRowDimension() + "*" + e.getColumnDimension() + "\n";
-            index ++;
+            index++;
         }
         return new IllegalArgumentException(message);
     }
