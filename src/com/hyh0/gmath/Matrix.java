@@ -15,7 +15,6 @@ import com.hyh0.gmath.debug.Tools;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
-import com.jogamp.opencl.CLDevice;
 
 public class Matrix implements Cloneable {
 
@@ -38,18 +37,18 @@ public class Matrix implements Cloneable {
      * 初始化OpenCl
      */
     public static void init() {
-        init(CLDevice.Type.DEFAULT);
+        init(DeviceType.DEFAULT);
     }
     
     /**
      * 初始化OpenCl
      * @param deviceType 指定设备种类(CLDevice.Type.CPU/GPU)
      */
-    public static void init(CLDevice.Type deviceType) {
+    public static void init(DeviceType deviceType) {
         if (inited) {
             return;
         } else {
-            gMath = new GMath(deviceType);
+            gMath = new GMath(deviceType.TYPE);
             queue = gMath.getQueue();
             context = gMath.getContext();
             MatrixMath.init(gMath);
