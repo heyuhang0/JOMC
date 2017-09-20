@@ -39,10 +39,12 @@ public class Matrix implements Cloneable {
     public static void init() {
         init(DeviceType.DEFAULT);
     }
-    
+
     /**
      * 初始化OpenCl
-     * @param deviceType 指定设备种类(CLDevice.Type.CPU/GPU)
+     * 
+     * @param deviceType
+     *            指定设备种类(CLDevice.Type.CPU/GPU)
      */
     public static void init(DeviceType deviceType) {
         if (inited) {
@@ -84,6 +86,7 @@ public class Matrix implements Cloneable {
             return globalSize + groupSize - r;
         }
     }
+
     /**
      * 创建一个新矩阵,元素全部初始化为s
      * 
@@ -543,6 +546,19 @@ public class Matrix implements Cloneable {
      */
     public boolean isEqualTo(Matrix another) {
         return gMath.compare(this, another);
+    }
+
+    /**
+     * 比较两个矩阵是否相等
+     * 
+     * @param another
+     *            与之比较的矩阵
+     * @param errorAllowed
+     *            允许的误差
+     * @return 如果相等即为true,反之为false
+     */
+    public boolean isEqualTo(Matrix another, double errorAllowed) {
+        return gMath.compare(this, another, errorAllowed);
     }
 
     /**

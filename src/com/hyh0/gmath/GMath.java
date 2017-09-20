@@ -60,14 +60,15 @@ class GMath {
     private CLKernel kPown;
     private CLKernel kSigmoid;
 
-
     private final int MULTIPLY_WORK_ITEM_M = 8; // 矩阵乘法每个工作项处理的矩阵行数(需要与cl中的大小对应)
     private final int MULTIPLY_WORK_ITEM_N = 8; // 矩阵乘法每个工作项处理的矩阵列数(需要与cl中的大小对应)
     private int preferredWorkGroupSizeForMultiplication; // 对于矩阵乘法的最优工作组大小
 
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
-     * @param deviceType 设备种类(CPU/GPU)
+     * 
+     * @param deviceType
+     *            设备种类(CPU/GPU)
      */
     public GMath(CLDevice.Type deviceType) {
         // Tools.setPrint(true); // 打开debug输出
@@ -143,25 +144,22 @@ class GMath {
         kMatrixMultiplyN.setArg(5, sizeOfTestMatrix);
         kMatrixMultiplyN.setArg(6, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M);
         kMatrixMultiplyN.setArg(7, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N);
-        
+
         long time;
         long lastTime = Long.MAX_VALUE;
         for (int i = 1; i * i <= device.getMaxWorkGroupSize(); i++) {
             time = System.nanoTime();
-            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
-                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M),
-                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N),
-                    i, i);
+            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M),
+                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N), i, i);
             queue.finish();
             time = System.nanoTime() - time;
             if (time > lastTime) {
                 Tools.println("the best size is: " + (i - 1));
                 return i - 1;
-            }
-            else
+            } else
                 lastTime = time;
         }
-        return (int)Math.sqrt(device.getMaxWorkGroupSize());
+        return (int) Math.sqrt(device.getMaxWorkGroupSize());
     }
 
     /**
@@ -332,10 +330,8 @@ class GMath {
                 kMatrixMultiplyN.setArg(5, m2.getColumnDimension());
                 kMatrixMultiplyN.setArg(6, globalWorkSizeM);
                 kMatrixMultiplyN.setArg(7, globalWorkSizeN);
-                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
-                        roundUp(localWorkSize, globalWorkSizeM),
-                        roundUp(localWorkSize, globalWorkSizeN),
-                        localWorkSize, localWorkSize);
+                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, roundUp(localWorkSize, globalWorkSizeM),
+                        roundUp(localWorkSize, globalWorkSizeN), localWorkSize, localWorkSize);
             }
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
                 kMatrixMultiply.setArg(0, m1.getArg());
@@ -418,6 +414,52 @@ class GMath {
     private boolean isEqualResultBufferInited = false;
 
     /**
+     * 比较两个矩阵是否相等
+     * 
+     * @param m1
+     *            矩阵1
+     * @param m2
+     *            矩阵2
+     * @param errorAllowed
+     *            允许的误差
+     * @return 如果矩阵相等返回true
+     */
+    public boolean compare(Matrix m1, Matrix m2, double errorAllowed) {
+        checkMatrix(m1, m2);
+        if (!isEqualResultBufferInited) {
+            isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
+            isEqualResultBufferInited = true;
+        }
+        isEqualResultBuffer.getBuffer().position(0);
+        isEqualResultBuffer.getBuffer().put(0);
+        isEqualResultBuffer.getBuffer().position(0);
+        queue.putWriteBuffer(isEqualResultBuffer, false);
+        kCompare.setArg(0, m1.getArg());
+        kCompare.setArg(1, m2.getArg());
+        kCompare.setArg(2, isEqualResultBuffer);
+        kCompare.setArg(3, (float) errorAllowed);
+        queue.put1DRangeKernel(kCompare, 0, m1.getRowDimension() * m2.getColumnDimension(), 0);
+        queue.putReadBuffer(isEqualResultBuffer, true);
+
+        if (isEqualResultBuffer.getBuffer().get(0) > 0)
+            return false;
+        else
+            return true;
+    }
+
+    /**
+     * 比较两个矩阵是否相等
+     * 
+     * @param m1
+     *            矩阵1
+     * @param m2
+     *            矩阵2
+     * @return 如果矩阵相等返回true
+     */
+    public boolean compare(Matrix m1, Matrix m2) {
+        return compare(m1, m2, 0.000001);
+    }
+    /**
      * 用均匀随机数初始化矩阵
      * 
      * @param matrix
@@ -434,37 +476,6 @@ class GMath {
         kRand.setArg(2, (float) upperLimit);
         kRand.setArg(3, (int) (Math.random() * 100));
         queue.put1DRangeKernel(kRand, 0, matrix.getRowDimension() * matrix.getColumnDimension(), 0);
-    }
-
-    /**
-     * 比较两个矩阵是否相等
-     * 
-     * @param m1
-     *            矩阵1
-     * @param m2
-     *            矩阵2
-     * @return 如果矩阵相等返回true
-     */
-    public boolean compare(Matrix m1, Matrix m2) {
-        checkMatrix(m1, m2);
-        if (!isEqualResultBufferInited) {
-            isEqualResultBuffer = context.createIntBuffer(1, CLMemory.Mem.READ_WRITE);
-            isEqualResultBufferInited = true;
-        }
-        isEqualResultBuffer.getBuffer().position(0);
-        isEqualResultBuffer.getBuffer().put(0);
-        isEqualResultBuffer.getBuffer().position(0);
-        queue.putWriteBuffer(isEqualResultBuffer, false);
-        kCompare.setArg(0, m1.getArg());
-        kCompare.setArg(1, m2.getArg());
-        kCompare.setArg(2, isEqualResultBuffer);
-        queue.put1DRangeKernel(kCompare, 0, m1.getRowDimension() * m2.getColumnDimension(), 0);
-        queue.putReadBuffer(isEqualResultBuffer, true);
-
-        if (isEqualResultBuffer.getBuffer().get(0) > 0)
-            return false;
-        else
-            return true;
     }
 
     public void abs(Matrix inputMatrix, Matrix resultMatrix) {

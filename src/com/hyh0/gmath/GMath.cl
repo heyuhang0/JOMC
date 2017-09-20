@@ -134,11 +134,11 @@ kernel void matrixMultiplyN(
 
 // compare two matrix
 // and save the number of elements that are differnt in result
-#define ERROR_ALLOWED 0.0000001f
-kernel void compare(global const float* m1, global const float* m2, global int* result) {
+#define ERROR_ALLOWED 0.001f
+kernel void compare(global const float* m1, global const float* m2, global int* result, float errorAllowed) {
     int id = get_global_id(0);
     float error = m1[id] - m2[id];
-    if(error > ERROR_ALLOWED || error < -ERROR_ALLOWED)
+    if(error > errorAllowed || error < -errorAllowed)
         atomic_inc(result);
 }
 
