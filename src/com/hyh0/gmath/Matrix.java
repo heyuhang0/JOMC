@@ -68,12 +68,22 @@ public class Matrix implements Cloneable {
         if (!inited) {
             Matrix.init();
         }
-        this.matrixBuffer = context.createFloatBuffer(m * n, READ_WRITE);
+        this.matrixBuffer = context.createFloatBuffer(roundUp(16, m * n), READ_WRITE); // 当大小被16整除时,能显著提升性能
         this.M = m;
         this.N = n;
         syncToDevice();
     }
 
+    private static int roundUp(int groupSize, int globalSize) {
+        if (groupSize <= 0)
+            return globalSize;
+        int r = globalSize % groupSize;
+        if (r == 0) {
+            return globalSize;
+        } else {
+            return globalSize + groupSize - r;
+        }
+    }
     /**
      * 创建一个新矩阵,元素全部初始化为s
      * 

@@ -297,26 +297,6 @@ class GMath {
     }
 
     /**
-     * 用均匀随机数初始化矩阵
-     * 
-     * @param matrix
-     *            输出的矩阵
-     * @param lowerLimit
-     *            随机数的下限
-     * @param upperLimit
-     *            随机数的上限
-     */
-    // TODO 当前只使用了一个粗糙的伪随机算法
-    public void fillMatrixRandomly(Matrix matrix, double lowerLimit, double upperLimit) {
-        kRand.setArg(0, matrix.getArg());
-        kRand.setArg(1, (float) lowerLimit);
-        kRand.setArg(2, (float) upperLimit);
-        kRand.setArg(3, (int) (Math.random() * 100));
-        queue.put1DRangeKernel(kRand, 0, matrix.getRowDimension() * matrix.getColumnDimension(), 0);
-    }
-
-
-    /**
      * 将两个矩阵相乘并将结果保存在第三个矩阵中
      * 
      * @param m1
@@ -330,12 +310,15 @@ class GMath {
         if (m1.getRowDimension() == mr.getRowDimension() && m1.getColumnDimension() == m2.getRowDimension()
                 && m2.getColumnDimension() == mr.getColumnDimension()) {
 
-            int globalWorkSizeM = m1.getRowDimension() / MULTIPLY_WORK_ITEM_M; // 向下取整
+            // 第一轮运算时(8*8为一组计算)时的Work Size大小,向下取整
+            int globalWorkSizeM = m1.getRowDimension() / MULTIPLY_WORK_ITEM_M;
             int globalWorkSizeN = m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N;
 
+            // 第二轮运算(计算第一轮的剩余元素时)的起始点
             int offsetM = globalWorkSizeM * MULTIPLY_WORK_ITEM_M;
             int offsetN = globalWorkSizeN * MULTIPLY_WORK_ITEM_N;
 
+            // 第二轮运算(计算第一轮的剩余元素时)的Work Size大小
             int globalWorkSizeReamainM = m1.getRowDimension() - offsetM;
             int globalWorkSizeReamainN = m2.getColumnDimension() - offsetN;
 
@@ -347,14 +330,13 @@ class GMath {
                 kMatrixMultiplyN.setArg(3, m1.getRowDimension());
                 kMatrixMultiplyN.setArg(4, m1.getColumnDimension());
                 kMatrixMultiplyN.setArg(5, m2.getColumnDimension());
-                kMatrixMultiplyN.setArg(6, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M);
-                kMatrixMultiplyN.setArg(7, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N);
+                kMatrixMultiplyN.setArg(6, globalWorkSizeM);
+                kMatrixMultiplyN.setArg(7, globalWorkSizeN);
                 queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
-                        roundUp(localWorkSize, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M),
-                        roundUp(localWorkSize, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N), localWorkSize,
-                        localWorkSize);
+                        roundUp(localWorkSize, globalWorkSizeM),
+                        roundUp(localWorkSize, globalWorkSizeN),
+                        localWorkSize, localWorkSize);
             }
-
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
                 kMatrixMultiply.setArg(0, m1.getArg());
                 kMatrixMultiply.setArg(1, m2.getArg());
@@ -365,7 +347,6 @@ class GMath {
                 queue.put2DRangeKernel(kMatrixMultiply, offsetM, 0, globalWorkSizeReamainM, m2.getColumnDimension(), 0,
                         0);
             }
-
             if (m2.getColumnDimension() % MULTIPLY_WORK_ITEM_N != 0 && m1.getRowDimension() > globalWorkSizeReamainM) {
                 kMatrixMultiply.setArg(0, m1.getArg());
                 kMatrixMultiply.setArg(1, m2.getArg());
@@ -376,7 +357,6 @@ class GMath {
                 queue.put2DRangeKernel(kMatrixMultiply, 0, offsetN, m1.getRowDimension() - globalWorkSizeReamainM,
                         globalWorkSizeReamainN, 0, 0);
             }
-
         } else {
             throw newIllegalArgumentException("矩阵的大小不符合相乘的条件", m1, m2, mr);
         }
@@ -436,6 +416,25 @@ class GMath {
 
     private CLBuffer<IntBuffer> isEqualResultBuffer;
     private boolean isEqualResultBufferInited = false;
+
+    /**
+     * 用均匀随机数初始化矩阵
+     * 
+     * @param matrix
+     *            输出的矩阵
+     * @param lowerLimit
+     *            随机数的下限
+     * @param upperLimit
+     *            随机数的上限
+     */
+    // TODO 当前只使用了一个粗糙的伪随机算法
+    public void fillMatrixRandomly(Matrix matrix, double lowerLimit, double upperLimit) {
+        kRand.setArg(0, matrix.getArg());
+        kRand.setArg(1, (float) lowerLimit);
+        kRand.setArg(2, (float) upperLimit);
+        kRand.setArg(3, (int) (Math.random() * 100));
+        queue.put1DRangeKernel(kRand, 0, matrix.getRowDimension() * matrix.getColumnDimension(), 0);
+    }
 
     /**
      * 比较两个矩阵是否相等
