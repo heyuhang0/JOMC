@@ -351,7 +351,7 @@ class GMath {
                 kMatrixMultiplyN.setArg(2, mr.getArg());
                 kMatrixMultiplyN.setArg(3, m1.getRowDimension());
                 kMatrixMultiplyN.setArg(4, m1.getColumnDimension());
-                kMatrixMultiplyN.setArg(5, m2.getRowDimension());
+                kMatrixMultiplyN.setArg(5, m2.getColumnDimension());
                 kMatrixMultiplyN.setArg(6, m1.getRowDimension() / MULTIPLY_WORK_ITEM_M);
                 kMatrixMultiplyN.setArg(7, m2.getColumnDimension() / MULTIPLY_WORK_ITEM_N);
                 queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
