@@ -34,7 +34,7 @@ public class Matrix implements Cloneable {
      */
 
     /**
-     * 初始化OpenCl
+     * 初始化OpenCl(使用浮点计算能力最强的设备)
      */
     public static void init() {
         init(DeviceType.DEFAULT);

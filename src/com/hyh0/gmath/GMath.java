@@ -64,12 +64,7 @@ class GMath {
     private final int MULTIPLY_WORK_ITEM_M = 8; // 矩阵乘法每个工作项处理的矩阵行数(需要与cl中的大小对应)
     private final int MULTIPLY_WORK_ITEM_N = 8; // 矩阵乘法每个工作项处理的矩阵列数(需要与cl中的大小对应)
     private int preferredWorkGroupSizeForMultiplication; // 对于矩阵乘法的最优工作组大小
-    /**
-     * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
-     */
-    public GMath() {
-        this(CLDevice.Type.DEFAULT);
-    }
+
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      * @param deviceType 设备种类(CPU/GPU)

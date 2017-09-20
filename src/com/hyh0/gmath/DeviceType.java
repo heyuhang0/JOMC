@@ -12,15 +12,9 @@ public enum DeviceType {
      */
     GPU(CLDevice.Type.GPU),
     /**
-     * CL_DEVICE_TYPE_DEFAULT. This type can be used for creating a context on
-     * the default device, a single device can never have this type.
+     * CL_DEVICE_TYPE_DEFAULT. Use the device with largest flops
      */
-    DEFAULT(CLDevice.Type.DEFAULT),
-    /**
-     * CL_DEVICE_TYPE_ALL. This type can be used for creating a context on
-     * all devices, a single device can never have this type.
-     */
-    ALL(CLDevice.Type.ALL);
+    DEFAULT(null);
     
     /**
      * Value of wrapped OpenCL device type.
