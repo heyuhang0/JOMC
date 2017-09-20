@@ -62,10 +62,17 @@ class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
+        this(CLDevice.Type.DEFAULT);
+    }
+    /**
+     * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
+     * @param deviceType 设备种类(CPU/GPU)
+     */
+    public GMath(CLDevice.Type deviceType) {
         // Tools.setPrint(true); // 打开debug输出
         context = CLContext.create();
         Tools.println(context);
-        device = context.getMaxFlopsDevice();
+        device = context.getMaxFlopsDevice(deviceType);
         Tools.println(device);
         queue = device.createCommandQueue();
         try {
