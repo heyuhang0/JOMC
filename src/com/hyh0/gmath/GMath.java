@@ -5,7 +5,6 @@ import static com.jogamp.opencl.CLMemory.Mem.READ_WRITE;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 
 import com.hyh0.gmath.debug.Tools;
 
@@ -69,11 +68,17 @@ class GMath {
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
      */
     public GMath() {
-        Tools.setPrint(true); // 打开debug输出
+        this(CLDevice.Type.DEFAULT);
+    }
+    /**
+     * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
+     * @param deviceType 设备种类(CPU/GPU)
+     */
+    public GMath(CLDevice.Type deviceType) {
+        // Tools.setPrint(true); // 打开debug输出
         context = CLContext.create();
         Tools.println(context);
-        device = context.getMaxFlopsDevice();
-        // device = context.getMaxFlopsDevice(CLDevice.Type.CPU); // force to use CPU
+        device = context.getMaxFlopsDevice(deviceType);
         Tools.println(device);
         queue = device.createCommandQueue();
         Tools.println("Preferred Float Vector Width: " + device.getPreferredFloatVectorWidth());
