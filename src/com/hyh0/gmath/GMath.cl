@@ -169,7 +169,7 @@ kernel void sigmoid(
      global const float* inputMatrix, 
      global float* resultMatrix) {
  int id = get_global_id(0);
- resultMatrix[id] = 1.0f / (1.0f + half_exp(-inputMatrix[id]));
+ resultMatrix[id] = 1.0f / (1.0f + native_exp(-inputMatrix[id]));
 }
 
 kernel void kAbs(
@@ -204,21 +204,21 @@ kernel void kCos(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_cos(inputMatrix[id]);
+    resultMatrix[id] = native_cos(inputMatrix[id]);
 }
 
 kernel void kSin(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_sin(inputMatrix[id]);
+    resultMatrix[id] = native_sin(inputMatrix[id]);
 }
 
 kernel void kTan(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_tan(inputMatrix[id]);
+    resultMatrix[id] = native_tan(inputMatrix[id]);
 }
 
 kernel void kCosh(
@@ -246,56 +246,56 @@ kernel void kLog(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log(inputMatrix[id]);
+    resultMatrix[id] = native_log(inputMatrix[id]);
 }
 
 kernel void kLog2(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log2(inputMatrix[id]);
+    resultMatrix[id] = native_log2(inputMatrix[id]);
 }
 
 kernel void kLog10(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_log10(inputMatrix[id]);
+    resultMatrix[id] = native_log10(inputMatrix[id]);
 }
 
 kernel void kExp(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_exp(inputMatrix[id]);
+    resultMatrix[id] = native_exp(inputMatrix[id]);
 }
 
 kernel void kExp2(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_exp2(inputMatrix[id]);
+    resultMatrix[id] = native_exp2(inputMatrix[id]);
 }
 
 kernel void kExp10(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_exp10(inputMatrix[id]);
+    resultMatrix[id] = native_exp10(inputMatrix[id]);
 }
 
 kernel void kSqrt(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_sqrt(inputMatrix[id]);
+    resultMatrix[id] = native_sqrt(inputMatrix[id]);
 }
 
 kernel void kRsqrt(
         global const float* inputMatrix, 
         global float* resultMatrix) {
     int id = get_global_id(0);
-    resultMatrix[id] = half_rsqrt(inputMatrix[id]);
+    resultMatrix[id] = native_rsqrt(inputMatrix[id]);
 }
 
 kernel void kPow(
