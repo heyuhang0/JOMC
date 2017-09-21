@@ -1,9 +1,6 @@
 package com.hyh0.gmath;
 
-import static com.jogamp.opencl.CLMemory.Mem.READ_WRITE;
-
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import com.hyh0.gmath.debug.Tools;
@@ -62,7 +59,8 @@ class GMath {
 
     private final int MULTIPLY_WORK_ITEM_M = 8; // 矩阵乘法每个工作项处理的矩阵行数(需要与cl中的大小对应)
     private final int MULTIPLY_WORK_ITEM_N = 8; // 矩阵乘法每个工作项处理的矩阵列数(需要与cl中的大小对应)
-    private int preferredWorkGroupSizeForMultiplication; // 对于矩阵乘法的最优工作组大小
+    private int groupSizeForMultiplicationM; // 对于矩阵乘法的最优工作组大小(m方向)
+    private int groupSizeForMultiplicationN; // 对于矩阵乘法的最优工作组大小(n方向)
 
     /**
      * 完成OpenCl的初始化 (!!用完后需要调用release方法释放资源)
@@ -126,40 +124,22 @@ class GMath {
             this.release();
             throw e;
         }
-        preferredWorkGroupSizeForMultiplication = getPreferredLocalGroupSizeForMultiplication();
+        setGroupSizeForMultiplication();
     }
 
-    private int getPreferredLocalGroupSizeForMultiplication() {
-        Tools.println("start to search the best work group size for matrix multiplication");
-        final int sizeOfTestMatrix = 129 * 8;
-        CLBuffer<FloatBuffer> A = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
-        CLBuffer<FloatBuffer> B = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
-        CLBuffer<FloatBuffer> C = context.createFloatBuffer(sizeOfTestMatrix * sizeOfTestMatrix, READ_WRITE);
+    /*
+     * 对CU数因式分解成2个最接近的数作为工作组的M和N的大小
+     * 只在 HD5300 与 CPU 上进行过测试，无法保证是否是最佳工作组大小
+     */
+    private void setGroupSizeForMultiplication() {
+        int maxCU = device.getMaxComputeUnits();
+        for (groupSizeForMultiplicationM = (int) Math.sqrt(maxCU); maxCU
+                % groupSizeForMultiplicationM != 0; groupSizeForMultiplicationM--)
+            ;
+        groupSizeForMultiplicationN = maxCU / groupSizeForMultiplicationM;
 
-        kMatrixMultiplyN.setArg(0, A);
-        kMatrixMultiplyN.setArg(1, B);
-        kMatrixMultiplyN.setArg(2, C);
-        kMatrixMultiplyN.setArg(3, sizeOfTestMatrix);
-        kMatrixMultiplyN.setArg(4, sizeOfTestMatrix);
-        kMatrixMultiplyN.setArg(5, sizeOfTestMatrix);
-        kMatrixMultiplyN.setArg(6, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M);
-        kMatrixMultiplyN.setArg(7, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N);
-
-        long time;
-        long lastTime = Long.MAX_VALUE;
-        for (int i = 1; i * i <= device.getMaxWorkGroupSize(); i++) {
-            time = System.nanoTime();
-            queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_M),
-                    roundUp(i, sizeOfTestMatrix / MULTIPLY_WORK_ITEM_N), i, i);
-            queue.finish();
-            time = System.nanoTime() - time;
-            if (time > lastTime) {
-                Tools.println("the best size is: " + (i - 1));
-                return i - 1;
-            } else
-                lastTime = time;
-        }
-        return (int) Math.sqrt(device.getMaxWorkGroupSize());
+        Tools.println("work group size for multiplication: " + groupSizeForMultiplicationM + "*"
+                + groupSizeForMultiplicationN);
     }
 
     /**
@@ -321,7 +301,6 @@ class GMath {
             int globalWorkSizeReamainN = m2.getColumnDimension() - offsetN;
 
             if (globalWorkSizeM != 0 && globalWorkSizeN != 0) {
-                final int localWorkSize = this.preferredWorkGroupSizeForMultiplication;
                 kMatrixMultiplyN.setArg(0, m1.getArg());
                 kMatrixMultiplyN.setArg(1, m2.getArg());
                 kMatrixMultiplyN.setArg(2, mr.getArg());
@@ -330,8 +309,11 @@ class GMath {
                 kMatrixMultiplyN.setArg(5, m2.getColumnDimension());
                 kMatrixMultiplyN.setArg(6, globalWorkSizeM);
                 kMatrixMultiplyN.setArg(7, globalWorkSizeN);
-                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0, roundUp(localWorkSize, globalWorkSizeM),
-                        roundUp(localWorkSize, globalWorkSizeN), localWorkSize, localWorkSize);
+                queue.put2DRangeKernel(kMatrixMultiplyN, 0, 0,
+                        roundUp(groupSizeForMultiplicationM, globalWorkSizeM),
+                        roundUp(groupSizeForMultiplicationN, globalWorkSizeN),
+                        groupSizeForMultiplicationM,
+                        groupSizeForMultiplicationN);
             }
             if (m1.getRowDimension() % MULTIPLY_WORK_ITEM_M != 0) {
                 kMatrixMultiply.setArg(0, m1.getArg());
@@ -459,6 +441,7 @@ class GMath {
     public boolean compare(Matrix m1, Matrix m2) {
         return compare(m1, m2, 0.000001);
     }
+
     /**
      * 用均匀随机数初始化矩阵
      * 

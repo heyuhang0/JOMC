@@ -1115,7 +1115,6 @@ public class Matrix implements Cloneable {
     protected void finalize() throws Throwable {
         super.finalize();
         this.release();
-        Tools.println("一个Matrix对象被回收");
     }
 
     /**
